@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  username   String   @unique
+  email      String   @unique
+  password   String
+  fullName   String?
+  bio        String?
+  profilePic String?
+  isPrivate  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  posts            Post[]
+  stories          Story[]
+  comments         Comment[]
+  likes            Like[]
+  followers        Follow[]          @relation("followers")
+  following        Follow[]          @relation("following")
+  notifications    Notification[]
+  messagesSent     Message[]         @relation("messagesSent")
+  messagesReceived Message[]         @relation("messagesReceived")
+  rooms            RoomParticipant[]
+  savedPosts       SavedPost[]
+  reports          Report[]          @relation("reports")
+  blocks           Block[]           @relation("blocks")
+  blockedBy        Block[]           @relation("blockedBy")
+  storyViews       StoryViewer[]
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  caption   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  media    Media[]
+  comments Comment[]
+  likes    Like[]
+  tags     TagOnPost[]
+  savedBy  SavedPost[]
+  reports  Report[]    @relation("postReports")
+}
+
+model Media {
+  id      String    @id @default(uuid())
+  url     String
+  type    MediaType
+  postId  String?
+  post    Post?     @relation(fields: [postId], references: [id])
+  storyId String?
+  story   Story?    @relation(fields: [storyId], references: [id])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Story {
+  id             String        @id @default(uuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  media          Media[]
+  viewers        StoryViewer[]
+  isCloseFriends Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  expiresAt      DateTime
+}
+
+model StoryViewer {
+  id       String   @id @default(uuid())
+  storyId  String
+  userId   String
+  viewedAt DateTime @default(now())
+  story    Story    @relation(fields: [storyId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id])
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id          String       @id @default(uuid())
+  followerId  String
+  followingId String
+  status      FollowStatus @default(PENDING) // untuk private account
+  createdAt   DateTime     @default(now())
+
+  follower  User @relation("followers", fields: [followerId], references: [id])
+  following User @relation("following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  FOLLOW
+  LIKE
+  COMMENT
+  MENTION
+  MESSAGE
+  STORY_VIEW
+}
+
+model Room {
+  id           String            @id @default(uuid())
+  createdAt    DateTime          @default(now())
+  participants RoomParticipant[]
+  messages     Message[]
+}
+
+model RoomParticipant {
+  id     String @id @default(uuid())
+  roomId String
+  userId String
+  room   Room   @relation(fields: [roomId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String?
+  mediaUrl   String?
+  createdAt  DateTime @default(now())
+  senderId   String
+  receiverId String
+  roomId     String
+  sender     User     @relation("messagesSent", fields: [senderId], references: [id])
+  receiver   User     @relation("messagesReceived", fields: [receiverId], references: [id])
+  room       Room     @relation(fields: [roomId], references: [id])
+}
+
+model Tag {
+  id    String      @id @default(uuid())
+  name  String      @unique
+  posts TagOnPost[]
+}
+
+model TagOnPost {
+  postId String
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id])
+  tag    Tag    @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
+
+model SavedPost {
+  id     String @id @default(uuid())
+  userId String
+  postId String
+  user   User   @relation(fields: [userId], references: [id])
+  post   Post   @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  postId     String?
+  userId     String?
+  reason     String
+  createdAt  DateTime @default(now())
+
+  reporter User  @relation("reports", fields: [reporterId], references: [id])
+  post     Post? @relation("postReports", fields: [postId], references: [id])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blocks", fields: [blockerId], references: [id])
+  blocked User @relation("blockedBy", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
