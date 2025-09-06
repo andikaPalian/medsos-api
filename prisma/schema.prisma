@@ -22,6 +22,11 @@ model User {
   bio        String?
   profilePic String?
   isPrivate  Boolean  @default(false)
+  isVerified Boolean  @default(false)
+  verificationToken String? // Untuk email verification
+  verificationTokenExpiry DateTime?
+  resetPasswordToken String? // Untuk reset password
+  resetPasswordTokenExpiry DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
