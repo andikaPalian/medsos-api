@@ -1,5 +1,5 @@
 import express from "express";
-import { loginController, registerController, resendVerificationEmailController, verifyEmailController } from "./userAuth.controller.js";
+import { forgotPasswordController, loginController, registerController, resendVerificationEmailController, resetPasswordController, verifyEmailController } from "./userAuth.controller.js";
 import { validateBody } from "../../../middlewares/zodValidator.js";
 import { loginSchema, registerSchema } from "../../../validators/userAuthValidation.js";
 
@@ -9,3 +9,5 @@ userAuthRouter.post("/register", validateBody(registerSchema), registerControlle
 userAuthRouter.post("/verify-email", verifyEmailController);
 userAuthRouter.post("/resend-verification", resendVerificationEmailController);
 userAuthRouter.post("/login", validateBody(loginSchema), loginController);
+userAuthRouter.post("/forgot-password", forgotPasswordController);
+userAuthRouter.post("/reset-password", resetPasswordController);

@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { transporter } from "../../../utils/email.js";
 
 const generateOtp = () => crypto.randomInt(100000, 999999).toString();
+const resetPasswordToken = () => crypto.randomBytes(32).toString("hex");
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
 
 export const register = async ({username, email, password}) => {
     try {
@@ -24,6 +26,7 @@ export const register = async ({username, email, password}) => {
 
         // Otp
         const otp = generateOtp();
+        const hashedOtp = hashToken(otp);
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
         // Create/Register new user
@@ -33,7 +36,7 @@ export const register = async ({username, email, password}) => {
                 email: email,
                 password: hashedPassword,
                 isVerified: false,
-                verificationToken: otp,
+                verificationToken: hashedOtp,
                 verificationTokenExpiry: otpExpiry
             }
         });
@@ -68,7 +71,9 @@ export const verifyEmail = async ({email, otp}) => {
             throw new AppError("Invalid email", 400);
         }
 
-        if (user.verificationToken !== otp) {
+        const hashedOtp = hashToken(otp);
+
+        if (user.verificationToken !== hashedOtp) {
             throw new AppError("Invalid verification code", 400);
         }
 
@@ -117,6 +122,7 @@ export const resendVerificationEmail = async ({email}) => {
 
         // Otp
         const otp = generateOtp();
+        const hashedOtp = hashToken(otp);
         const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // OTP valid for 5 minutes
 
         await prisma.user.update({
@@ -124,7 +130,7 @@ export const resendVerificationEmail = async ({email}) => {
                 email: email
             },
             data: {
-                verificationToken: otp,
+                verificationToken: hashedOtp,
                 verificationTokenExpiry: otpExpiry
             }
         });
@@ -171,6 +177,85 @@ export const login = async ({email, password}) => {
         return token;
     } catch (error) {
         console.error("Error logging in user: ", error);
+        throw error;
+    }
+};
+
+export const forgotPassword = async ({email}) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        });
+        if (!user) {
+            throw new AppError("User not found", 404);
+        }
+
+        if (user.isVerified === false) {
+            throw new AppError("User is not verified. Please verify your email first", 401);
+        }
+
+        const resetToken = resetPasswordToken();
+        const hashedToken = hashToken(resetToken);
+        const tokenExpiry = new Date(Date.now() + 5 * 60 * 1000); // Token valid for 5 minutes
+
+        await prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                resetPasswordToken: hashedToken,
+                resetPasswordTokenExpiry: tokenExpiry
+            }
+        });
+
+        const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
+
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to: email,
+            subject: "Password Reset Request",
+            text: `You are receiving this email because you requested a password reset. Please click the following link or paste it into your browser to reset your password: ${resetUrl}\n\n
+            If you did not request a password reset, please ignore this email.`
+        });
+    } catch (error) {
+        console.error("Error sending password reset email: ", error);
+        throw error;
+    }
+};
+
+export const resetPassword = async ({token, newPassword}) => {
+    try {
+        const hashedToken = hashToken(token);
+
+        // Find user by tokwn and expiry date
+        const user = await prisma.user.findFirst({
+            where: {
+                resetPasswordToken: hashedToken,
+                resetPasswordTokenExpiry: {
+                    gt: new Date() // not expired
+                }
+            }
+        });
+        if (!user) {
+            throw new AppError("Invalid or expired token", 400);
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+        await prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                password: hashedPassword,
+                resetPasswordToken: null,
+                resetPasswordTokenExpiry: null
+            }
+        });
+    } catch (error) {
+        console.error("Error resetting password: ", error);
         throw error;
     }
 };

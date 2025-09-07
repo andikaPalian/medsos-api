@@ -1,4 +1,4 @@
-import { login, register, resendVerificationEmail, verifyEmail } from "./userAuth.service.js";
+import { forgotPassword, login, register, resendVerificationEmail, resetPassword, verifyEmail } from "./userAuth.service.js";
 
 export const registerController = async (req, res, next) => {
     try {
@@ -48,6 +48,32 @@ export const loginController = async (req, res, next) => {
             success: true,
             message: "User logged in successfully",
             data: token
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const forgotPasswordController = async (req, res, next) => {
+    try {
+        await forgotPassword(req.body);
+
+        return res.status(200).json({
+            success: true,
+            message: "Password reset link sent successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const resetPasswordController = async (req, res, next) => {
+    try {
+        await resetPassword(req.query, req.body);
+
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successfully"
         });
     } catch (error) {
         next(error);
