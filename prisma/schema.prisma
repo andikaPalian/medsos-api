@@ -14,37 +14,51 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  username   String   @unique
-  email      String   @unique
-  password   String
-  fullName   String?
-  bio        String?
-  profilePic String?
-  isPrivate  Boolean  @default(false)
-  isVerified Boolean  @default(false)
-  verificationToken String? // Untuk email verification
-  verificationTokenExpiry DateTime?
-  resetPasswordToken String? // Untuk reset password
+  id                       String    @id @default(uuid())
+  username                 String    @unique
+  email                    String    @unique
+  password                 String
+  fullName                 String?
+  bio                      String?
+  profilePic               String?
+  profilePublicId          String?
+  isPrivate                Boolean   @default(false)
+  isVerified               Boolean   @default(false)
+  verificationToken        String? // Untuk email verification
+  verificationTokenExpiry  DateTime?
+  resetPasswordToken       String? // Untuk reset password
   resetPasswordTokenExpiry DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
-  posts            Post[]
-  stories          Story[]
-  comments         Comment[]
-  likes            Like[]
-  followers        Follow[]          @relation("followers")
-  following        Follow[]          @relation("following")
-  notifications    Notification[]
-  messagesSent     Message[]         @relation("messagesSent")
-  messagesReceived Message[]         @relation("messagesReceived")
-  rooms            RoomParticipant[]
-  savedPosts       SavedPost[]
-  reports          Report[]          @relation("reports")
-  blocks           Block[]           @relation("blocks")
-  blockedBy        Block[]           @relation("blockedBy")
-  storyViews       StoryViewer[]
+  posts              Post[]
+  stories            Story[]
+  comments           Comment[]
+  likes              Like[]
+  followers          Follow[]          @relation("followers")
+  following          Follow[]          @relation("following")
+  notifications      Notification[]
+  messagesSent       Message[]         @relation("messagesSent")
+  messagesReceived   Message[]         @relation("messagesReceived")
+  rooms              RoomParticipant[]
+  savedPosts         SavedPost[]
+  reports            Report[]          @relation("reports")
+  blocks             Block[]           @relation("blocks")
+  blockedBy          Block[]           @relation("blockedBy")
+  storyViews         StoryViewer[]
+  closeFriends       CloseFriends[]    @relation("closeFriendOwner")
+  addedAsCloseFriend CloseFriends[]    @relation("closeFriendsList")
+}
+
+model CloseFriends {
+  id        String   @id @default(uuid())
+  user      User     @relation("closeFriendOwner", fields: [userId], references: [id])
+  userId    String
+  friend    User     @relation("closeFriendsList", fields: [friendId], references: [id])
+  friendId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId]) // so as not to duplicate
 }
 
 model Post {
