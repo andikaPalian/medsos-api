@@ -168,6 +168,7 @@ model Notification {
 
 enum NotificationType {
   FOLLOW
+  FOLLOW_REQUEST
   LIKE
   COMMENT
   MENTION
