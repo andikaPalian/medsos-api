@@ -126,3 +126,153 @@ export const listRequests = async (userId) => {
         throw error;
     }
 };
+
+export const acceptRequest = async (userId, followerId) => {
+    try {
+        return prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+                where: {
+                    id: userId
+                }
+            });
+            if (!user) {
+                throw new AppError("User not found", 404)
+            }
+
+            const follower = await tx.user.findUnique({
+                where: {
+                    id: followerId
+                }
+            });
+            if (!follower) {
+                throw new AppError("Follower not found", 404);
+            }
+
+            const request = await tx.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: followerId,
+                        followingId: userId
+                    }
+                }
+            });
+            if (!request) {
+                throw new AppError("Request not found", 404);
+            }
+
+            if (request.status !== "PENDING") {
+                throw new AppError("This request is not pending", 400);
+            }
+
+            await tx.follow.update({
+                where: {
+                    followerId_followingId: {
+                        followerId: followerId,
+                        followingId: userId
+                    }
+                },
+                data: {
+                    status: "ACCEPTED"
+                }
+            });
+
+            await tx.user.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    followersCount: {
+                        increment: 1
+                    }
+                }
+            });
+
+            await tx.user.update({
+                where: {
+                    id: followerId
+                },
+                data: {
+                    followingCount: {
+                        increment: 1
+                    }
+                }
+            });
+
+            await tx.notification.create({
+                data: {
+                    userId: followerId,
+                    type: "REQUEST_ACCEPTED",
+                    message: `${user.username} accepted your follow request`,
+                    isRead: false
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error accepting request: ", error);
+        throw error;
+    }
+};
+
+export const rejectRequest = async (userId, followerId) => {
+    try {
+        return prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+                where: {
+                    id: userId
+                }
+            });
+            if (!user) {
+                throw new AppError("User not found", 404);
+            }
+
+            const follower = await tx.user.findUnique({
+                where: {
+                    id: followerId
+                }
+            });
+            if (!follower) {
+                throw new AppError("Follower not found", 404);
+            }
+
+            const request = await tx.follow.findUnique({
+                where: {
+                    followerId_followingId: {
+                        followerId: followerId,
+                        followingId: userId
+                    }
+                }
+            });
+            if (!request) {
+                throw new AppError("Request not found", 404);
+            }
+
+            if (request.status !== "PENDING") {
+                throw new AppError("This request is not pending", 400);
+            }
+
+            await tx.follow.update({
+                where: {
+                    followerId_followingId: {
+                        followerId: followerId,
+                        followingId: userId
+                    }
+                },
+                data: {
+                    status: "REJECTED"
+                }
+            });
+
+            await tx.notification.create({
+                data: {
+                    userId: followerId,
+                    type: "REQUEST_REJECTED",
+                    message: `${user.username} rejected your follow request`,
+                    isRead: false
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error rejecting request: ", error);
+        throw error;
+    }
+};
