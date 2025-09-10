@@ -176,6 +176,8 @@ enum NotificationType {
   MENTION
   MESSAGE
   STORY_VIEW
+  REQUEST_ACCEPTED
+  REQUEST_REJECTED
 }
 
 model Room {
