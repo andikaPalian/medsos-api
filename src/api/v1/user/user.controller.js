@@ -1,4 +1,4 @@
-import { getUserProfile, listCloseFriends, listFollowers, listFollowing, togglePrivateAccount, updateCloseFriends, updateProfile } from "./user.service.js";
+import { getUserProfile, listCloseFriends, listFollowers, listFollowing, removeFollower, togglePrivateAccount, updateCloseFriends, updateProfile } from "./user.service.js";
 
 export const updateProfileController = async (req, res, next) => {
     try {
@@ -108,6 +108,22 @@ export const listCloseFriendsController = async (req, res, next) => {
             success: true,
             message: "Close friends fetched successfully",
             data: closeFriends
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const removeFollowerController = async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const {followerId} = req.params;
+
+        await removeFollower(userId, followerId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Follower removed successfully"
         });
     } catch (error) {
         next(error);

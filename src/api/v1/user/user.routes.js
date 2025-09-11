@@ -1,6 +1,6 @@
 import express from "express";
 import { userAuth } from "../../../middlewares/userMiddleware.js";
-import { getUserProfileController, listCloseFriendsController, listFollowersController, listFollowingController, togglePrivateAccountController, updateCloseFriendsController, updateProfileController } from "./user.controller.js";
+import { getUserProfileController, listCloseFriendsController, listFollowersController, listFollowingController, removeFollowerController, togglePrivateAccountController, updateCloseFriendsController, updateProfileController } from "./user.controller.js";
 import { upload } from "../../../middlewares/multer.js";
 
 export const userRouter = express.Router();
@@ -17,3 +17,6 @@ userRouter.get("/:targetUserId/following", userAuth, listFollowingController);
 // CLose friends
 userRouter.post("/:targetUserId/close-friends", userAuth, updateCloseFriendsController);
 userRouter.get("/me/close-friends", userAuth, listCloseFriendsController);
+
+// Remove follower
+userRouter.delete("/users/:followerId/remove", userAuth, removeFollowerController);

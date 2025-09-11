@@ -384,3 +384,81 @@ export const listCloseFriends = async (userId) => {
         throw error;
     }
 };
+
+export const removeFollower = async (userId, followerId) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        });
+        if (!user) {
+            throw new AppError("User not found", 404);
+        }
+
+        const follower = await prisma.user.findUnique({
+            where: {
+                id: followerId
+            }
+        });
+        if (!follower) {
+            throw new AppError("Follower not found", 404);
+        }
+
+        if (user.id !== userId) {
+            throw new AppError("Unauthorized: You can only update your own profile", 403);
+        }
+        
+        const isFollower = await prisma.follow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: followerId,
+                    followingId: userId
+                }
+            }
+        });
+        if (!isFollower) {
+            throw new AppError("Target user is not a follower of you", 400);
+        }
+        
+        if (isFollower.status !== "ACCEPTED") {
+            throw new AppError("Target user is not a follower of you", 400);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: followerId,
+                        followingId: userId
+                    }
+                }
+            });
+
+            await tx.user.update({
+                where: {
+                    id: userId
+                },
+                data: {
+                    followersCount: {
+                        decrement: 1
+                    }
+                }
+            });
+
+            await tx.user.update({
+                where: {
+                    id: followerId
+                },
+                data: {
+                    followingCount: {
+                        decrement: 1
+                    }
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error removing follower: ", error);
+        throw error;
+    }
+};
