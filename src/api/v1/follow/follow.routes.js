@@ -1,6 +1,6 @@
 import express from "express";
 import { userAuth } from "../../../middlewares/userMiddleware.js";
-import { acceptRequestController, listRequestsController, rejectRequestController, toggleFollowController } from "./follow.controller.js";
+import { acceptRequestController, getMutualFollowersController, listRequestsController, rejectRequestController, toggleFollowController } from "./follow.controller.js";
 
 export const followRouter = express.Router();
 
@@ -11,3 +11,6 @@ followRouter.post("/:targetUserId/toggle", userAuth, toggleFollowController);
 followRouter.get("/requests", userAuth, listRequestsController);
 followRouter.post("/:followerId/accept", userAuth, acceptRequestController);
 followRouter.post("/:followerId/reject", userAuth, rejectRequestController);
+
+// Mutual Followers
+followRouter.get("/:targetUserId/mutual-followers", userAuth, getMutualFollowersController);

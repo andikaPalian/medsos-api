@@ -276,3 +276,61 @@ export const rejectRequest = async (userId, followerId) => {
         throw error;
     }
 };
+
+export const getMutualFollowers = async (userId, targetUserId) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        });
+        if (!user) {
+            throw new AppError("User not found", 404);
+        }
+
+        const myFollowing = await prisma.follow.findMany({
+            where: {
+                followerId: userId,
+                status: "ACCEPTED"
+            },
+            select: {
+                followingId: true
+            }
+        });
+
+        const targetFollowers = await prisma.follow.findMany({
+            where: {
+                followingId: targetUserId,
+                status: "ACCEPTED"
+            },
+            select: {
+                followerId: true
+            }
+        });
+
+        const myFollowingIds = myFollowing.map((following) => following.followingId);
+        const targetFollowersIds = targetFollowers.map((followers) => followers.followerId);
+
+        // Find intersection of myFollowingIds and targetFollowersIds
+        const mutualIds = myFollowingIds.filter((id) => targetFollowersIds.includes(id));
+
+        // Get users data from mutualIds
+        const mutualUsers = await prisma.user.findMany({
+            where: {
+                id: {
+                    in: mutualIds
+                }
+            },
+            select: {
+                id: true,
+                profilePic: true,
+                username: true
+            }
+        });
+
+        return mutualUsers;
+    } catch (error) {
+        console.error("Error getting mutual followers: ", error);
+        throw error;
+    }
+};

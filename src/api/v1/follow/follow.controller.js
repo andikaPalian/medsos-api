@@ -1,4 +1,4 @@
-import { acceptRequest, listRequests, rejectRequest, toggleFollow } from "./follow.service.js";
+import { acceptRequest, getMutualFollowers, listRequests, rejectRequest, toggleFollow } from "./follow.service.js";
 
 export const toggleFollowController = async (req, res, next) => {
     try {
@@ -58,6 +58,23 @@ export const rejectRequestController = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Request rejected successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getMutualFollowersController = async (req, res, next) => {
+    try {
+        const userId = req.user.userId;
+        const {targetUserId} = req.params;
+
+        const mutualUsers = await getMutualFollowers(userId, targetUserId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Mutual followers fetched successfully",
+            data: mutualUsers
         });
     } catch (error) {
         next(error);
