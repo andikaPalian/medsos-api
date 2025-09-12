@@ -101,12 +101,14 @@ export const getUserProfile = async (userId, targetUserId) => {
             throw new AppError("User not found", 404);
         }
 
-        const isFollowing = await prisma.follow.findFirst({
+        const isFollowing = await prisma.follow.findUnique({
             where: {
-                followerId: userId,
-                followingId: targetUserId
+                followerId_followingId: {
+                    followerId: userId,
+                    followingId: targetUserId
+                }
             }
-        })
+        });
 
         if (targetUser.isPrivate && !isFollowing) {
             return {
