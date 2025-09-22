@@ -3,6 +3,10 @@ import { AppError } from "../../../utils/errorHandler.js";
 
 export const toggleFollow = async (userId, targetUserId) => {
     try {
+        if (userId === targetUserId) {
+            throw new AppError("You cannot follow yourself", 400);
+        }
+
         const user = await prisma.user.findUnique({
             where: {
                 id: userId
@@ -21,20 +25,8 @@ export const toggleFollow = async (userId, targetUserId) => {
             throw new AppError("Target user not found", 404);
         }
 
-        if (targetUser.id === userId) {
-            throw new AppError("You cannot follow yourself", 400);
-        }
-
-        const isFollowing = await prisma.follow.findUnique({
-            where: {
-                followerId_followingId: {
-                    followerId: userId,
-                    followingId: targetUserId
-                }
-            }
-        });
-        if (isFollowing) {
-            await prisma.follow.delete({
+        return await prisma.$transaction(async (tx) => {
+            const isFollowing = await tx.follow.findUnique({
                 where: {
                     followerId_followingId: {
                         followerId: userId,
@@ -42,42 +34,104 @@ export const toggleFollow = async (userId, targetUserId) => {
                     }
                 }
             });
-        }
+            if (isFollowing) {
+                // Unfollow the user
+                await tx.follow.delete({
+                    where: {
+                        followerId_followingId: {
+                            followerId: userId,
+                            followingId: targetUserId
+                        }
+                    }
+                });
 
-        // If the target user is private
-        if (targetUser.isPrivate) {
-            await prisma.follow.create({
-                data: {
-                    followerId: userId,
-                    followingId: targetUserId,
-                    status: "PENDING"
+                await tx.user.update({
+                    where: {
+                        id: userId
+                    },
+                    data: {
+                        followingCount: {
+                            decrement: 1
+                        }
+                    }
+                });
+
+                await tx.user.update({
+                    where: {
+                        id: targetUserId
+                    },
+                    data: {
+                        followersCount: {
+                            decrement: 1
+                        }
+                    }
+                });
+
+                return;
+            } else {
+                // If the target user is private, send the request first
+                if (targetUser.isPrivate) {
+                    await tx.follow.create({
+                        data: {
+                            followerId: userId,
+                            followingId: targetUserId,
+                            status: "PENDING"
+                        }
+                    });
+
+                    await tx.notification.create({
+                        data: {
+                            userId: targetUserId,
+                            type: "FOLLOW_REQUEST",
+                            message: `${user.username} has sent you a follow request.`,
+                            isRead: false
+                        }
+                    });
+
+                    return;
                 }
-            });
 
-            await prisma.notification.create({
-                data: {
-                    userId: targetUserId,
-                    type: "FOLLOW_REQUEST",
-                    message: `${user.username} sent you a follow request`,
-                    isRead: false
-                }
-            });
-        }
+                // Follow the user, if the target user is public
+                await tx.follow.create({
+                    data: {
+                        followerId: userId,
+                        followingId: targetUserId,
+                        status: "ACCEPTED"
+                    }
+                });
 
-        await prisma.follow.create({
-            data: {
-                followerId: userId,
-                followingId: targetUserId,
-                status: "ACCEPTED"
-            }
-        });
+                await tx.user.update({
+                    where: {
+                        id: userId
+                    },
+                    data: {
+                        followingCount: {
+                            increment: 1
+                        }
+                    }
+                });
 
-        await prisma.notification.create({
-            data: {
-                userId: targetUserId,
-                type: "FOLLOW",
-                message: `${user.username} followed you`,
-                isRead: false
+                await tx.user.update({
+                    where: {
+                        id: targetUserId
+                    },
+                    data: {
+                        followersCount: {
+                            increment: 1
+                        }
+                    }
+                });
+
+                await tx.notification.create({
+                    data: {
+                        userId: targetUserId,
+                        type: "FOLLOW",
+                        message: `${user.username} has followed you.`,
+                        isRead: false
+                    }
+                });
+
+                return;
             }
         });
     } catch (error) {
@@ -331,6 +385,89 @@ export const getMutualFollowers = async (userId, targetUserId) => {
         return mutualUsers;
     } catch (error) {
         console.error("Error getting mutual followers: ", error);
+        throw error;
+    }
+};
+
+export const suggestedUsers = async (userId, {limit = 10}) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        });
+        if (!user) {
+            throw new AppError("User not found", 404);
+        }
+
+        // Get all users who are currently being followed
+        const following = await prisma.follow.findMany({
+            where: {
+                followerId: userId,
+                status: "ACCEPTED"
+            },
+            select: {
+                followingId: true
+            }
+        });
+
+        const followingIds = following.map((f) => f.followingId);
+
+        // Search for "friends of friends" 
+        const friendsOfFriends = await prisma.follow.findMany({
+            where: {
+                followerId: {
+                    in: followingIds
+                },
+                status: "ACCEPTED",
+                followingId: {
+                    notIn: [...followingIds, userId] // Exclude user who is currently being followed and the user itself
+                }
+            },
+            select: {
+                following: {
+                    select: {
+                        id: true,
+                        profilePic: true,
+                        username: true
+                    }
+                }
+            },
+            take: limit
+        });
+
+        // Take random user as fallback
+        const randomUser = await prisma.user.findMany({
+            where: {
+                id: {
+                    notIn: [...followingIds, userId]
+                }
+            },
+            select: {
+                id: true,
+                profilePic: true,
+                username: true
+            },
+            take: limit,
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        // Merge result
+        const suggestion = [
+            ...friendsOfFriends.map((f) => f.following),
+            ...randomUser
+        ];
+
+        // Remove duplicates if any
+        const uniqueSuggestion = [
+            ...new Map(suggestion.map((user) => [user.id])).values(),
+        ];
+
+        return uniqueSuggestion.slice(0, limit);
+    } catch (error) {
+        console.error("Error getting suggested users: ", error);
         throw error;
     }
 };
