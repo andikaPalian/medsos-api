@@ -80,13 +80,14 @@ model Post {
 }
 
 model Media {
-  id      String    @id @default(uuid())
-  url     String
-  type    MediaType
-  postId  String?
-  post    Post?     @relation(fields: [postId], references: [id])
-  storyId String?
-  story   Story?    @relation(fields: [storyId], references: [id])
+  id          String    @id @default(uuid())
+  url         String
+  urlPublicId String?
+  type        MediaType
+  postId      String?
+  post        Post?     @relation(fields: [postId], references: [id])
+  storyId     String?
+  story       Story?    @relation(fields: [storyId], references: [id])
 }
 
 enum MediaType {
