@@ -64,12 +64,13 @@ model CloseFriends {
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  caption   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+  id         String   @id @default(uuid())
+  caption    String?
+  totalLikes Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
 
   media    Media[]
   comments Comment[]
