@@ -1,4 +1,4 @@
-import { searchUserByUsername } from "./search.service";
+import { searchUserByUsername } from "./search.service.js";
 
 export const seearchUserByUsernameController = async (req, res, next) => {
     try {
