@@ -9,6 +9,7 @@ import { AppError } from './utils/errorHandler.js';
 import { connectCloudinary } from './config/cloudinary.js';
 import { userRouter } from './api/v1/user/user.routes.js';
 import { followRouter } from './api/v1/follow/follow.routes.js';
+import { postRouter } from './api/v1/post/post.routes.js';
 
 const app = express();
 const port = process.env.PORT;
@@ -22,6 +23,7 @@ app.use(morgan('dev'));
 app.use('/api/v1/auth', userAuthRouter);
 app.use('/api/v1/user', userRouter);
 app.use("/api/v1/follow", followRouter);
+app.use("/api/v1/post", postRouter);
 
 // Error handler 
 app.use((err, req, res, next) => {
