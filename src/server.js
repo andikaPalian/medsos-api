@@ -4,6 +4,7 @@ import 'dotenv/config';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import multer from 'multer';
+import './cron/storyCleanUp.js';
 import { userAuthRouter } from './api/v1/auth/userAuth.routes.js';
 import { AppError } from './utils/errorHandler.js';
 import { connectCloudinary } from './config/cloudinary.js';
@@ -11,6 +12,7 @@ import { userRouter } from './api/v1/user/user.routes.js';
 import { followRouter } from './api/v1/follow/follow.routes.js';
 import { postRouter } from './api/v1/post/post.routes.js';
 import { searchRouter } from './api/v1/search/search.routes.js';
+import { storyRouter } from './api/v1/story/story.routes.js';
 
 const app = express();
 const port = process.env.PORT;
@@ -26,6 +28,7 @@ app.use('/api/v1/user', userRouter);
 app.use("/api/v1/follow", followRouter);
 app.use("/api/v1/post", postRouter);
 app.use("/api/v1/search", searchRouter);
+app.use("/api/v1/story", storyRouter);
 
 // Error handler 
 app.use((err, req, res, next) => {
