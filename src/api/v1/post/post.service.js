@@ -449,6 +449,14 @@ export const likesToggle = async (userId, postId) => {
                     }
                 });
 
+                await tx.notification.create({
+                    data: {
+                        type: "LIKE",
+                        userId: post.authorId,
+                        message: `${user.username} liked your post!`,
+                    }
+                });
+
                 return;
             }
         });
@@ -493,6 +501,15 @@ export const commentOnPost = async (userId, postId, content) => {
                         username: true
                     }
                 }
+            }
+        });
+
+        await prisma.notification.create({
+            data: {
+                type: "COMMENT",
+                userId: post.authorId,
+                message: `${user.username} commented on your post`,
+                isRead: false
             }
         });
 
