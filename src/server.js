@@ -13,9 +13,27 @@ import { followRouter } from './api/v1/follow/follow.routes.js';
 import { postRouter } from './api/v1/post/post.routes.js';
 import { searchRouter } from './api/v1/search/search.routes.js';
 import { storyRouter } from './api/v1/story/story.routes.js';
+import { Server } from 'socket.io';
+import {createServer} from 'http';
+import { messageSocket } from './socket/messageSocket.js';
 
 const app = express();
+const server = createServer(app);
 const port = process.env.PORT;
+
+const io = new Server(server, {
+    cors: {
+        origin: process.env.CLIENT_URL,
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on("connection", (socket) => {
+    console.log(`User connected with socket id: ${socket.id}`);
+    
+    messageSocket(socket, io);
+});
+
 connectCloudinary();
 
 app.use(express.json());
@@ -54,6 +72,6 @@ app.use((err, req, res, next) => {
     next();
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
