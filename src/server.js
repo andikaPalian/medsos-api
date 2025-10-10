@@ -50,26 +50,29 @@ app.use("/api/v1/story", storyRouter);
 
 // Error handler 
 app.use((err, req, res, next) => {
+    console.error("Error: ", err);
+
+    // Handler error from multer
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+
+    // Handler error from AppError (custom error)
     if (err instanceof AppError) {
         return res.status(err.statusCode).json({
             success: false,
             message: err.message
         });
     }
+
+    // For other errors
     return res.status(500).json({
+        success: false,
         message: "Internal server error"
     });
-});
-
-// Handle multer errors
-app.use((err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-        return res.status(400).json({ message: err.message });
-    } else if (err) {
-        console.error("Unexpected error:", err)
-        return res.status(500).json({ message: err.message || "Internal server error" });
-    }
-    next();
 });
 
 server.listen(port, () => {
