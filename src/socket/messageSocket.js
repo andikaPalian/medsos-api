@@ -107,6 +107,14 @@ export const messageSocket = (socket, io) => {
     // Event: User deletes message for himself
     socket.on("delete_message", async ({messageId, userId}) => {
         try {
+            const message = await prisma.message.findUnique({
+                where: {
+                    id: messageId
+                }
+            });
+            if (!message) return socket.emit('error', 'Message not found');
+            if (message.senderId !== userId) return socket.emit('error', 'Unauthorized: You can only delete your own messages');
+
             await prisma.message.update({
                 where: {
                     id: messageId
