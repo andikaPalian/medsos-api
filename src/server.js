@@ -16,6 +16,7 @@ import { storyRouter } from './api/v1/story/story.routes.js';
 import { Server } from 'socket.io';
 import {createServer} from 'http';
 import { messageSocket } from './socket/messageSocket.js';
+import messageRouter from './api/v1/messages/message.routes.js';
 
 const app = express();
 const server = createServer(app);
@@ -47,6 +48,7 @@ app.use("/api/v1/follow", followRouter);
 app.use("/api/v1/post", postRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/story", storyRouter);
+app.use("/api/v1/message", messageRouter(io));
 
 // Error handler 
 app.use((err, req, res, next) => {
