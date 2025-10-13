@@ -145,7 +145,7 @@ export const messageSocket = (socket, io) => {
             if (message.senderId !== senderId) return socket.emit('error', 'Unauthorized: You can only delete your own messages');
 
             const hourSinceSent = moment().diff(message.createdAt, 'hours');
-            if (hourSinceSent < 24) return socket.emit('error', 'Message can only be deleted within 24 hours');
+            if (hourSinceSent > 24) return socket.emit('error', 'Message can only be deleted within 24 hours');
 
             await prisma.message.update({
                 where: {

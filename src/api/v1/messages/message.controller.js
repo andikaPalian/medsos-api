@@ -12,7 +12,7 @@ export const createMessageController = (io) => async (req, res, next) => {
             io.to(receiverId.toString()).emit('newMessage', newMessage);
         }
 
-        return res.statusz(201).json({
+        return res.status(201).json({
             success: true,
             message: "Message created successfully",
             data: newMessage
@@ -43,8 +43,9 @@ export const editMessageContentController = (io) => async (req, res, next) => {
     try {
         const userId = req.user.userId;
         const {messageId} = req.params;
+        const {newContent} = req.body;
 
-        const editedMessage = await editMessageContent(userId, messageId, req.body);
+        const editedMessage = await editMessageContent(userId, messageId, newContent);
 
         if (io) {
             io.to(editedMessage.receiverId.toString()).emit('messageEdited', editedMessage);

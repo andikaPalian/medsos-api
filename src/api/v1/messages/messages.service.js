@@ -216,7 +216,7 @@ export const deleteMessageForEveryone = async (userId, messageId) => {
 
         const hoursSinceSent = Math.floor((Date.now() - message.createdAt.getTime()) / 1000 / 60 / 60);
         if (hoursSinceSent > 24) {
-            throw new AppError("Messages can be deleted only after 24 hours", 400);
+            throw new AppError("Messages can only be deleted within 24 hours", 400);
         }
 
         await prisma.message.update({
