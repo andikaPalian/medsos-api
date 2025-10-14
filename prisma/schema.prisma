@@ -73,12 +73,13 @@ model Post {
   authorId   String
   author     User     @relation(fields: [authorId], references: [id])
 
-  media    Media[]
-  comments Comment[]
-  likes    Like[]
-  tags     TagOnPost[]
-  savedBy  SavedPost[]
-  reports  Report[]    @relation("postReports")
+  media        Media[]
+  comments     Comment[]
+  notification Notification[]
+  likes        Like[]
+  tags         TagOnPost[]
+  savedBy      SavedPost[]
+  reports      Report[]       @relation("postReports")
 }
 
 model Media {
@@ -106,6 +107,8 @@ model Story {
   isCloseFriends Boolean       @default(false)
   createdAt      DateTime      @default(now())
   expiresAt      DateTime
+
+  notification Notification[]
 }
 
 model StoryViewer {
@@ -171,6 +174,10 @@ model Notification {
   sender    User?            @relation("NotificationSender", fields: [senderId], references: [id])
   type      NotificationType
   message   String
+  postId    String?
+  post      Post?            @relation(fields: [postId], references: [id])
+  storyId   String?
+  story     Story?           @relation(fields: [storyId], references: [id])
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 }
