@@ -17,6 +17,7 @@ import { Server } from 'socket.io';
 import {createServer} from 'http';
 import { messageSocket } from './socket/messageSocket.js';
 import messageRouter from './api/v1/messages/message.routes.js';
+import { notificationSocket } from './socket/notificationSocket.js';
 
 const app = express();
 const server = createServer(app);
@@ -33,6 +34,7 @@ io.on("connection", (socket) => {
     console.log(`User connected with socket id: ${socket.id}`);
     
     messageSocket(socket, io);
+    notificationSocket(socket, io);
 });
 
 connectCloudinary();
