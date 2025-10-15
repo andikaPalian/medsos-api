@@ -1,4 +1,4 @@
-import { createMessage, deleteMessageForEveryone, deleteMessageForHimself, editMessageContent, getMessagesByRoom } from "./messages.service";
+import { createMessage, deleteMessageForEveryone, deleteMessageForHimself, editMessageContent, getMessagesByRoom } from "./messages.service.js";
 
 export const createMessageController = (io) => async (req, res, next) => {
     try {

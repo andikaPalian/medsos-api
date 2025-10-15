@@ -1,6 +1,6 @@
 import express from "express";
-import { userAuth } from "../../../middlewares/userMiddleware";
-import { createMessageController, deleteMessageForEveryoneController, deleteMessageForHimselfController, editMessageContentController, getMessagesByRoomController } from "./message.controller";
+import { userAuth } from "../../../middlewares/userMiddleware.js";
+import { createMessageController, deleteMessageForEveryoneController, deleteMessageForHimselfController, editMessageContentController, getMessagesByRoomController } from "./message.controller.js";
 
 const messageRouter = express.Router();
 
