@@ -17,6 +17,18 @@ import {
   verifyToken,
 } from "../../../utils/jwt.js";
 
+export const generateUserSession = async (userId) => {
+  const accessToken = generateAccessToken(userId);
+  const refreshToken = generateRefreshToken(userId);
+
+  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const expiresAt = getRefreshTokenExpiry();
+
+  await authRepository.saveRefreshToken(userId, hashedRefreshToken, expiresAt);
+
+  return { accessToken, refreshToken };
+};
+
 // Service function for user registration with email and password
 export const register = async (userData) => {
   const { username, email, password } = userData;
@@ -160,16 +172,8 @@ export const login = async ({ email, password }) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // Generate Access Token and Refresh Token JWT
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
-
-  // Hash the refresh token
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
-  const expiresAt = getRefreshTokenExpiry();
-
-  // Save the refresh token to DB
-  await authRepository.saveRefreshToken(user.id, hashedRefreshToken, expiresAt);
+  // Generate access token and refresh token
+  const { accessToken, refreshToken } = await generateUserSession(user.id);
 
   const { password: _, ...safeUserData } = user;
 
@@ -356,10 +360,12 @@ export const completeOAuthRegistration = async (registerToken, username) => {
     },
   );
 
+  const { accessToken, refreshToken } = await generateUserSession(newUser.id);
+
   logger.info(`[AUTH SERVICE] Completed OAuth registration for: ${newUser.username}`);
 
   const { password: _, ...safeUserData } = newUser;
-  return safeUserData;
+  return { user: safeUserData, accessToken, refreshToken };
 };
 
 // Service function to logout and remove the refresh token
