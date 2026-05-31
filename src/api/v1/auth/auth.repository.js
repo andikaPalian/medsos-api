@@ -1,6 +1,6 @@
 import prisma from "../../../config/client.js";
 
-// Function to find a user by email
+// Query to find a user by email
 export const findUserByEmail = async (email) => {
   return await prisma.user.findUnique({
     where: {
@@ -9,7 +9,7 @@ export const findUserByEmail = async (email) => {
   });
 };
 
-// Function to find a user by username
+// Query to find a user by username
 export const findUserByUsername = async (username) => {
   return await prisma.user.findUnique({
     where: {
@@ -18,7 +18,7 @@ export const findUserByUsername = async (username) => {
   });
 };
 
-// Function to find a user by reset password token
+// Query to find a user by reset password token
 export const findUserByToken = async (token) => {
   return await prisma.user.findFirst({
     where: {
@@ -30,7 +30,7 @@ export const findUserByToken = async (token) => {
   });
 };
 
-// Function to find a linked account by provider and providerAccountId
+// Query to find a linked account by provider and providerAccountId
 export const findLinkedAccount = async (provider, providerAccountId) => {
   return await prisma.account.findUnique({
     where: {
@@ -42,7 +42,7 @@ export const findLinkedAccount = async (provider, providerAccountId) => {
   });
 };
 
-// Function to create a linked account
+// Query to create a linked account
 export const linkedAccount = async (userId, provider, providerAccountId) => {
   return await prisma.account.create({
     data: {
@@ -53,13 +53,14 @@ export const linkedAccount = async (userId, provider, providerAccountId) => {
   });
 };
 
-// Function to create a new user
+// Query to create a new user
 export const createUser = async (userData) => {
   return await prisma.user.create({
     data: userData,
   });
 };
 
+// Query to create a new user with linked account
 export const createUserWithAccount = async (userData, providerData) => {
   return await prisma.user.create({
     data: {
@@ -71,7 +72,7 @@ export const createUserWithAccount = async (userData, providerData) => {
   });
 };
 
-// Function to update user data by email
+// Query to update user data by email
 export const updateUserByEmail = async (email, updateData) => {
   return await prisma.user.update({
     where: {
@@ -81,7 +82,7 @@ export const updateUserByEmail = async (email, updateData) => {
   });
 };
 
-// Function to update user data by ID
+// Query to update user data by ID
 export const updateUserById = async (userId, updateData) => {
   return await prisma.user.update({
     where: {
@@ -89,4 +90,47 @@ export const updateUserById = async (userId, updateData) => {
     },
     data: updateData,
   });
+};
+
+// Query to save refresh token
+export const saveRefreshToken = async (userId, refreshToken, expiresAt) => {
+  return await prisma.refreshToken.create({
+    data: {
+      userId: userId,
+      tokenHash: refreshToken,
+      expiresAt: expiresAt,
+    },
+  });
+};
+
+// Query to find refresh token
+export const findRefreshToken = async (tokenHash) => {
+  return await prisma.refreshToken.findUnique({
+    where: {
+      tokenHash: tokenHash,
+    },
+  });
+};
+
+// Query to delete refresh token
+export const deleteRefreshToken = async (tokenHash) => {
+  return await prisma.refreshToken.delete({
+    where: {
+      tokenHash: tokenHash,
+    },
+  });
+};
+
+// Query to rotate refresh token
+export const rotateRefreshToken = async (oldTokenHash, newRow) => {
+  return await prisma.$transaction([
+    prisma.refreshToken.delete({
+      where: {
+        tokenHash: oldTokenHash,
+      },
+    }),
+    prisma.refreshToken.create({
+      data: newRow,
+    }),
+  ]);
 };

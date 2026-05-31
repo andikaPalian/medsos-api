@@ -1,7 +1,6 @@
 import * as authRepository from "./auth.repository.js";
 import { AppError } from "../../../utils/errorHandler.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { transporter } from "../../../utils/email.js";
 import logger from "../../../utils/logger.js";
 import {
@@ -9,6 +8,14 @@ import {
   generateResetPasswordToken,
   hashToken,
 } from "../../../utils/generateOtp.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateRegisterToken,
+  getRefreshTokenExpiry,
+  hashRefreshToken,
+  verifyToken,
+} from "../../../utils/jwt.js";
 
 // Service function for user registration with email and password
 export const register = async (userData) => {
@@ -153,14 +160,54 @@ export const login = async ({ email, password }) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // Generate JWT Token
-  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  // Generate Access Token and Refresh Token JWT
+  const accessToken = generateAccessToken(user.id);
+  const refreshToken = generateRefreshToken(user.id);
+
+  // Hash the refresh token
+  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const expiresAt = getRefreshTokenExpiry();
+
+  // Save the refresh token to DB
+  await authRepository.saveRefreshToken(user.id, hashedRefreshToken, expiresAt);
 
   const { password: _, ...safeUserData } = user;
 
   logger.info(`[AUTH SERVICE] User logged in with email": ${email}`);
 
-  return { user: safeUserData, token };
+  return { user: safeUserData, accessToken, refreshToken };
+};
+
+// Service for refresh user session
+export const refreshSession = async (oldRefreshToken) => {
+  let decoded;
+  try {
+    decoded = verifyToken(oldRefreshToken, process.env.JWT_SECRET_REFRESH);
+  } catch (error) {
+    throw new AppError("Invalid or expired refresh token. Please login again", 401);
+  }
+
+  const oldHash = hashRefreshToken(oldRefreshToken);
+
+  const tokenRecord = await authRepository.findRefreshToken(oldHash);
+  if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
+    if (tokenRecord) await authRepository.deleteRefreshToken(oldHash);
+    throw new AppError("Session Expired. Please login again", 401);
+  }
+
+  const newAccessToken = generateAccessToken(tokenRecord.userId);
+  const newRefreshToken = generateRefreshToken(tokenRecord.userId);
+
+  const newHash = hashRefreshToken(newRefreshToken);
+  const newExpiresAt = getRefreshTokenExpiry();
+
+  await authRepository.rotateRefreshToken(oldHash, {
+    tokenHash: newHash,
+    userId: tokenRecord.userId,
+    expiresAt: newExpiresAt,
+  });
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
 // Service function for forgot password
@@ -266,7 +313,7 @@ export const processGoogleLogin = async (profile, providerName) => {
     type: "oauth_registration",
   };
 
-  const registerToken = jwt.sign(registerPayload, process.env.JWT_SECRET, { expiresIn: "15m" });
+  const registerToken = generateRegisterToken(registerPayload);
 
   logger.info(
     `[AUTH SERVICE] Initiated Oath registration for email: ${email} using provider: ${providerName}`,
@@ -284,7 +331,7 @@ export const completeOAuthRegistration = async (registerToken, username) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(registerToken, process.env.JWT_SECRET);
+    decoded = verifyToken(registerToken);
     if (decoded.type !== "oauth_registration") throw new Error();
   } catch (error) {
     throw new AppError("Session expired or invalid.", 400);
@@ -313,4 +360,16 @@ export const completeOAuthRegistration = async (registerToken, username) => {
 
   const { password: _, ...safeUserData } = newUser;
   return safeUserData;
+};
+
+// Service function to logout and remove the refresh token
+export const logout = async (refreshToken) => {
+  const tokenHash = hashRefreshToken(refreshToken);
+
+  try {
+    await authRepository.deleteRefreshToken(tokenHash);
+    logger.info(`[AUTH SERVICE] Refresh token revoked successfully during logout.`);
+  } catch (error) {
+    logger.warn(`[AUTH SERVICE] Logout warning: Token code not found or already missing in DB`);
+  }
 };
