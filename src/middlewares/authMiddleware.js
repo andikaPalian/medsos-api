@@ -18,7 +18,7 @@ export const userAuth = catchAsync(async (req, res, next) => {
 
   // Verify the token
   try {
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
 
     // Attach payload to request object
     req.user = {
