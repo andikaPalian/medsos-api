@@ -205,6 +205,8 @@ model Notification {
   story     Story?           @relation(fields: [storyId], references: [id])
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 enum NotificationType {
