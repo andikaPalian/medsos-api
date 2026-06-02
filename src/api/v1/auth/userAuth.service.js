@@ -186,7 +186,7 @@ export const login = async ({ email, password }) => {
 export const refreshSession = async (oldRefreshToken) => {
   let decoded;
   try {
-    decoded = verifyToken(oldRefreshToken, process.env.JWT_SECRET_REFRESH);
+    decoded = await verifyToken(oldRefreshToken, process.env.JWT_SECRET_REFRESH);
   } catch (error) {
     throw new AppError("Invalid or expired refresh token. Please login again", 401);
   }
@@ -335,7 +335,7 @@ export const completeOAuthRegistration = async (registerToken, username) => {
 
   let decoded;
   try {
-    decoded = verifyToken(registerToken);
+    decoded = await verifyToken(registerToken);
     if (decoded.type !== "oauth_registration") throw new Error();
   } catch (error) {
     throw new AppError("Session expired or invalid.", 400);
