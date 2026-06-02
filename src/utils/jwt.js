@@ -30,7 +30,17 @@ export const generateRegisterToken = (payload) => {
 
 // Verify a JWT token
 export const verifyToken = (token, secret = process.env.JWT_SECRET) => {
-  return jwt.verify(token, secret);
+  return new Promise((resolve, reject) => {
+    if (!secret) {
+      return reject(new Error("JWT Configuration Error: Secret key is missing."));
+    }
+
+    // Run verification token in thread pool
+    jwt.verify(token, secret, (err, decoded) => {
+      if (err) return reject(err);
+      resolve(decoded);
+    });
+  });
 };
 
 // Hash refresh token
