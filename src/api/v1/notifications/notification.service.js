@@ -11,9 +11,9 @@ export const createNotification = async ({ senderId, receiverId, type, postId, s
   const messageTemplates = {
     FOLLOW: `${sender.username} started following you.`,
     FOLLOW_REQUEST: `${sender.username} sent you a follow request.`,
-    REQUEST_ACCEPTED: `${sender.username} accepted you follow request`,
+    REQUEST_ACCEPTED: `${sender.username} accepted your follow request`,
     LIKE: `${sender.username} liked your post`,
-    COMMENT: `${sender.username} commented on yout post`,
+    COMMENT: `${sender.username} commented on your post`,
     MENTION: `${sender.username} mentioned you in a post`,
     MESSAGE: `${sender.username} sent you a message`,
     STORY_VIEW: `${sender.username} viewed your story.`,
