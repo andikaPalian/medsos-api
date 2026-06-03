@@ -1,66 +1,49 @@
-import { createNotification, deleteNotification, getNotifications, markNotificationAsRead } from "./notification.service";
+import { catchAsync } from "../../../utils/catchAsync.js";
+import * as notificationService from "./notification.service.js";
 
-export const createNotificationController = async (req, res, next) => {
-    try {
-        const senderId = req.user.userId;
-        const {receiverId, type, postId, storyId} = req.body;
+// Controller fot get user notifications
+export const getUserNotifications = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const { limit, nextCursor } = req.query;
 
-        const newNotification = await createNotification(senderId, receiverId, type, postId, storyId);
+  const notifications = await notificationService.getNotifications(userId, { limit, nextCursor });
 
-        return res.status(201).json({
-            success: true,
-            message: "Notification created successfully",
-            data: newNotification
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+  return res.status(200).json({
+    success: true,
+    message: "Notifications fetched successfully",
+    data: notifications.data,
+    pagination: notifications.pagination,
+  });
+});
 
-export const getNotificationsController = async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
+// Controller for mark notification as read
+export const readNotification = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const { notificationId } = req.params;
 
-        const notifications = await getNotifications(userId);
+  await notificationService.markNotificationAsRead(userId, notificationId);
 
-        return res.status(200).json({
-            success: true,
-            message: "Notifications fetched successfully",
-            data: notifications
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+  return res.status(200).json({
+    success: true,
+    message: "Notification marked as read successfully",
+    data: {
+      notificationId: notificationId,
+    },
+  });
+});
 
-export const markNotificationAsReadController = async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const {notificationId} = req.params;
+// Controller for delete notification
+export const deleteNotification = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const { notificationId } = req.params;
 
-        await markNotificationAsRead(userId, notificationId);
-        
-        return res.status(200).json({
-            success: true,
-            message: "Notification marked as read successfully"
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+  await notificationService.deleteNotification(userId, notificationId);
 
-export const deleteNotificationController = async (req, res, next) => {
-    try {
-        const userId = req.user.userId;
-        const {notificationId} = req.params;
-
-        await deleteNotification(userId, notificationId);
-
-        return res.status(200).json({
-            success: true,
-            message: "Notification deleted successfully"
-        });
-    } catch (error) {
-        next(error);
-    }
-};
+  return res.status(200).json({
+    success: true,
+    message: "Notification deleted successfully",
+    data: {
+      notificationId: notificationId,
+    },
+  });
+});
