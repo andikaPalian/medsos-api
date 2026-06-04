@@ -18,6 +18,7 @@ import { createServer } from "http";
 import { messageSocket } from "./socket/messageSocket.js";
 import messageRouter from "./api/v1/messages/message.routes.js";
 import { notificationSocket } from "./socket/notificationSocket.js";
+import { notificationRouter } from "./api/v1/notifications/notification.routes.js";
 
 const app = express();
 const server = createServer(app);
@@ -53,6 +54,7 @@ app.use("/api/v1/post", postRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/story", storyRouter);
 app.use("/api/v1/message", messageRouter(io));
+app.use("/api/v1/notification", notificationRouter);
 
 // Error handler
 app.use((err, req, res, next) => {
