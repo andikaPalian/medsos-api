@@ -113,9 +113,9 @@ model Media {
   urlPublicId String?
   type        MediaType
   postId      String?
-  post        Post?     @relation(fields: [postId], references: [id])
+  post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   storyId     String?
-  story       Story?    @relation(fields: [storyId], references: [id])
+  story       Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
 }
 
 enum MediaType {
@@ -151,11 +151,11 @@ model Comment {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   authorId  String
-  author    User      @relation(fields: [authorId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   postId    String
-  post      Post      @relation(fields: [postId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   parentId  String?
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
 }
 
@@ -168,6 +168,7 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
 }
 
 model Follow {
@@ -181,6 +182,7 @@ model Follow {
   following User @relation("following", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
+  @@index([followerId, followingId])
 }
 
 enum FollowStatus {
@@ -260,6 +262,8 @@ model Message {
   forwardFromId        String?
   forwardFrom          Message?  @relation("Forwards", fields: [forwardFromId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   forwardedMessages    Message[] @relation("Forwards")
+
+  @@index([roomId, createdAt(sort: Desc)])
 }
 
 model Tag {
@@ -285,6 +289,7 @@ model SavedPost {
   post   Post   @relation(fields: [postId], references: [id])
 
   @@unique([userId, postId])
+  @@index([userId])
 }
 
 model Report {
