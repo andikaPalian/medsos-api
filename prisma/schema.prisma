@@ -96,7 +96,7 @@ model Post {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   authorId   String
-  author     User     @relation(fields: [authorId], references: [id])
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   media        Media[]
   comments     Comment[]
@@ -105,6 +105,8 @@ model Post {
   tags         TagOnPost[]
   savedBy      SavedPost[]
   reports      Report[]       @relation("postReports")
+
+  @@index([authorId, createdAt(sort: Desc)])
 }
 
 model Media {
@@ -141,8 +143,10 @@ model StoryViewer {
   storyId  String
   userId   String
   viewedAt DateTime @default(now())
-  story    Story    @relation(fields: [storyId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
 }
 
 model Comment {
@@ -157,14 +161,16 @@ model Comment {
   parentId  String?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+
+  @@index([postId, createdAt(sort: Asc)])
 }
 
 model Like {
   id        String   @id @default(uuid())
   userId    String
   postId    String
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
@@ -178,11 +184,11 @@ model Follow {
   status      FollowStatus @default(PENDING) // untuk private account
   createdAt   DateTime     @default(now())
 
-  follower  User @relation("followers", fields: [followerId], references: [id])
-  following User @relation("following", fields: [followingId], references: [id])
+  follower  User @relation("followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
-  @@index([followerId, followingId])
+  @@index([followingId])
 }
 
 enum FollowStatus {
@@ -195,16 +201,16 @@ model Notification {
   id        String           @id @default(uuid())
   // User who receiver notification
   userId    String
-  user      User             @relation("UserNotification", fields: [userId], references: [id])
+  user      User             @relation("UserNotification", fields: [userId], references: [id], onDelete: Cascade)
   // User who trigger notifications (e.g. message senders, likers, comments)
   senderId  String?
-  sender    User?            @relation("NotificationSender", fields: [senderId], references: [id])
+  sender    User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
   type      NotificationType
   message   String
   postId    String?
-  post      Post?            @relation(fields: [postId], references: [id])
+  post      Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
   storyId   String?
-  story     Story?           @relation(fields: [storyId], references: [id])
+  story     Story?           @relation(fields: [storyId], references: [id], onDelete: Cascade)
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
@@ -285,8 +291,8 @@ model SavedPost {
   id     String @id @default(uuid())
   userId String
   postId String
-  user   User   @relation(fields: [userId], references: [id])
-  post   Post   @relation(fields: [postId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
   @@index([userId])
