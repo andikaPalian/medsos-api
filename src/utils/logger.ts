@@ -1,11 +1,15 @@
 import winston from "winston";
 import "winston-daily-rotate-file";
 
+interface logInfo extends winston.Logform.TransformableInfo {
+  timestamp?: string;
+}
+
 // Format for console
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`),
+  winston.format.printf((info: logInfo) => `${info.timestamp} ${info.level}: ${info.message}`),
 );
 
 // Format for file
@@ -40,4 +44,4 @@ const logger = winston.createLogger({
   ],
 });
 
-export default logger;
+export { logger };
