@@ -40,7 +40,7 @@ export const createMessage = async ({
   }
 
   const { iv, encryptedMessage } = encryptMessage(message);
-  const chatRoomId = [String(senderId), String(receiverId)].sort().join("-");
+  const chatRoomId = [String(senderId), String(receiverId)].sort().join("_");
 
   const newMessage = await messageRepository.insertMessage({
     senderId,
