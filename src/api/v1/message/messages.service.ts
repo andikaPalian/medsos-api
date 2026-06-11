@@ -8,6 +8,9 @@ import {
   PaginatedMessageResponse,
 } from "../../../types/messages/messageService.js";
 
+const RECALL_MESSAGE_WINDOW_HOURS = 24;
+const DEFAULT_CHAT_LIMIT = 30;
+
 type MessageWithSender = Message & {
   sender: {
     id: string;
@@ -65,12 +68,11 @@ export const getMessageByRoom = async (
 ): Promise<PaginatedMessageResponse> => {
   const roomPartisipants = roomId.split("_");
   if (!roomPartisipants.includes(String(userId))) {
-    logger.warn(`[MESSAGE SERVICE] User ${userId} unathorized access attempt to Room: ${roomId}`);
+    logger.warn(`[MESSAGE SERVICE] User ${userId} unauthorized access attempt to Room: ${roomId}`);
     throw new AppError("Unauthorized: You are not a participant of this chat room.", 403);
   }
 
-  const safeLimit = typeof limit === "string" ? parseInt(limit, 10) : limit;
-  const take = Math.abs(safeLimit) || 30;
+  const take = Math.abs(limit) || DEFAULT_CHAT_LIMIT;
 
   const messages = await messageRepository.findManyMessageByRoom({
     roomId,
@@ -79,18 +81,22 @@ export const getMessageByRoom = async (
     nextCursor,
   });
 
-  let hashNextPage = false;
+  let hasNextPage = false;
   let cursor: string | null = null;
 
   const messageArray = [...messages];
   if (messageArray.length > take) {
-    hashNextPage = true;
+    hasNextPage = true;
     const nextItem = messageArray.pop();
     cursor = nextItem ? nextItem.id : null;
   }
 
   const formattedMessages = messageArray.reverse().map((msg) => {
     const decryptedMessage = decryptMessage(msg.content, msg.iv);
+
+    if (!decryptMessage && !msg.isDeletedForEveryone) {
+      logger.error(`[MESSAGE SERVICE] Failed to decrypt message ${msg.id} in Room ${roomId}`);
+    }
 
     return {
       ...msg,
@@ -104,7 +110,7 @@ export const getMessageByRoom = async (
     success: true,
     data: formattedMessages,
     pagination: {
-      hashNextPage,
+      hasNextPage,
       nextCursor: cursor,
     },
   };
@@ -164,7 +170,7 @@ export const deleteMessageForEveryone = async (
   }
 
   const hourSinceSent = Math.floor((Date.now() - message.createdAt.getTime()) / 1000 / 60 / 60);
-  if (hourSinceSent > 24) {
+  if (hourSinceSent > RECALL_MESSAGE_WINDOW_HOURS) {
     logger.warn(
       `[MESSAGE SERVICE] Recall rejected: Message ${messageId} passed the 24h window (${hourSinceSent}h).`,
     );

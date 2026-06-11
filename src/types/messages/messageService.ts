@@ -12,7 +12,7 @@ export interface PaginatedMessageResponse {
   success: boolean;
   data: Array<Message & { content: string }>;
   pagination: {
-    hashNextPage: boolean;
+    hasNextPage: boolean;
     nextCursor: string | null;
   };
 }
