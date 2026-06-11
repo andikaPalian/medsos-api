@@ -94,7 +94,7 @@ export const getMessageByRoom = async (
   const formattedMessages = messageArray.reverse().map((msg) => {
     const decryptedMessage = decryptMessage(msg.content, msg.iv);
 
-    if (!decryptMessage && !msg.isDeletedForEveryone) {
+    if (!decryptedMessage && !msg.isDeletedForEveryone) {
       logger.error(`[MESSAGE SERVICE] Failed to decrypt message ${msg.id} in Room ${roomId}`);
     }
 
