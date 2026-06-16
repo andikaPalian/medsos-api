@@ -10,11 +10,11 @@ const JWT_SECRET: Secret = process.env.JWT_SECRET as string;
 const JWT_SECRET_REFRESH: Secret = process.env.JWT_SECRET_REFRESH as string;
 
 // Generate a JWT access token
-export const generateAccessToken = (userId: string): string => {
+export const generateAccessToken = (userId: string, username: string): string => {
   const options: SignOptions = {
     expiresIn: env.JWT_ACCESS_EXPIRES,
   };
-  return jwt.sign({ id: userId }, JWT_SECRET, options);
+  return jwt.sign({ id: userId, username }, JWT_SECRET, options);
 };
 
 // Generate a JWT refresh token
