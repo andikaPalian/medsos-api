@@ -9,7 +9,7 @@ import {
   updateMessageSchema,
 } from "./message.validation.js";
 
-const messageRouter = Router();
+export const messageRouter = Router();
 
 messageRouter.use(userAuth);
 
