@@ -4,11 +4,7 @@ import { z } from "zod";
 export const sendMessageSchema = z.object({
   body: z.object({
     receiverId: z.string().trim().uuid({ message: "Receiver ID format is not valid." }),
-    messageId: z
-      .string()
-      .trim()
-      .min(1, "Message content is required")
-      .max(5000, "Message too long"),
+    message: z.string().trim().min(1, "Message content is required").max(5000, "Message too long"),
     replyToId: z
       .string()
       .trim()
@@ -59,3 +55,6 @@ export const messageIdParamSchema = z.object({
     messageId: z.string().trim().uuid({ message: "Message ID format is not valid." }),
   }),
 });
+
+export type GetMessagesParams = z.infer<typeof getMessageSchema>["params"];
+export type GetMessagesQuery = z.infer<typeof getMessageSchema>["query"];
