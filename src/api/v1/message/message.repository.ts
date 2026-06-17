@@ -3,6 +3,8 @@ import { prisma } from "../../../config/client.js";
 import {
   GetMessageQueryArgs,
   InsertMessageInput,
+  MessageWithParticipants,
+  MessageWithSender,
 } from "../../../types/messages/messageRepository.js";
 
 // Query to find user by user id
@@ -24,7 +26,7 @@ export const findMessageById = async (messageId: string): Promise<Message | null
 };
 
 // Query to insert a new message
-export const insertMessage = async (input: InsertMessageInput) => {
+export const insertMessage = async (input: InsertMessageInput): Promise<MessageWithSender> => {
   return await prisma.message.create({
     data: {
       content: input.content,
@@ -66,7 +68,7 @@ export const findManyMessageByRoom = async ({
   userId,
   take,
   nextCursor,
-}: GetMessageQueryArgs) => {
+}: GetMessageQueryArgs): Promise<MessageWithParticipants[]> => {
   const queryOptions: Prisma.MessageFindManyArgs = {
     where: {
       roomId,
@@ -103,7 +105,8 @@ export const findManyMessageByRoom = async ({
     queryOptions.skip = 1;
   }
 
-  return await prisma.message.findMany(queryOptions);
+  const messages = await prisma.message.findMany(queryOptions);
+  return messages as MessageWithParticipants[];
 };
 
 // Query to edit/update message content
@@ -111,7 +114,7 @@ export const updateMessageContent = async (
   messageId: string,
   encryptedContent: string,
   iv: string,
-) => {
+): Promise<Message> => {
   return await prisma.message.update({
     where: {
       id: messageId,
@@ -125,7 +128,7 @@ export const updateMessageContent = async (
 };
 
 // Query to delete the message for user by userId
-export const pushUserToDeleteFor = async (messageId: string, userId: string) => {
+export const pushUserToDeleteFor = async (messageId: string, userId: string): Promise<Message> => {
   return await prisma.message.update({
     where: {
       id: messageId,
@@ -139,7 +142,7 @@ export const pushUserToDeleteFor = async (messageId: string, userId: string) => 
 };
 
 // Query to delete the message for everyone
-export const markAsDeletedForEveryone = async (messageId: string) => {
+export const markAsDeletedForEveryone = async (messageId: string): Promise<Message> => {
   return await prisma.message.update({
     where: {
       id: messageId,
