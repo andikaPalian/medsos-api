@@ -3,6 +3,8 @@ import { SignOptions } from "jsonwebtoken";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PORT: z.coerce.number().default(3000),
+  CLIENT_URL: z.string().url("CLIENT_URL must be a valid url"),
 
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   JWT_SECRET_REFRESH: z.string().min(1, "JWT_SECRET_REFRESH is required"),
