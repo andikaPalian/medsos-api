@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { catchAsync } from "../utils/catchAsync.js";
-import { AppError } from "../utils/errorHandler.js";
-import { verifyToken } from "../utils/jwt.js";
+import { AppError } from "../common/error/errorHandler.js";
+import { verifyToken } from "../common/utils/jwt.js";
 import { UserSession } from "../types/auth/session.type.js";
 
 export const userAuth = catchAsync(

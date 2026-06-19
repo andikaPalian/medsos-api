@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodType } from "zod";
-import { ValidationError } from "../utils/validationError.js";
+import { ValidationError } from "../common/error/validationError.js";
 
 interface ValidationRequestPayload {
   body?: string;
