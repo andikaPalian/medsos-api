@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as messageController from "../controllers/message.controller.js";
-import { userAuth } from "../../../middlewares/authMiddleware.js";
+import { userAuth } from "../../../middlewares/auth.middleware.js";
 import { validate } from "../../../middlewares/validator.js";
 import {
   getMessageSchema,
