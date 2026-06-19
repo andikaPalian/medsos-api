@@ -52,6 +52,7 @@ model User {
   storyViews         StoryViewer[]
   closeFriends       CloseFriends[]    @relation("closeFriendOwner")
   addedAsCloseFriend CloseFriends[]    @relation("closeFriendsList")
+  messageDeletions   MessageDeletion[]
 }
 
 model RefreshToken {
@@ -245,31 +246,44 @@ model RoomParticipant {
 }
 
 model Message {
-  id                   String    @id @default(uuid())
+  id                   String            @id @default(uuid())
   content              String
   iv                   String
   mediaUrl             String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
   senderId             String
   receiverId           String
   roomId               String
-  sender               User      @relation("messagesSent", fields: [senderId], references: [id])
-  receiver             User      @relation("messagesReceived", fields: [receiverId], references: [id])
-  room                 Room      @relation(fields: [roomId], references: [id])
-  isRead               Boolean   @default(false)
-  isEdited             Boolean   @default(false)
-  deletedFor           String[] // Saves the ID of the user who deleted this message for himself.
-  isDeletedForEveryone Boolean   @default(false)
+  sender               User              @relation("messagesSent", fields: [senderId], references: [id])
+  receiver             User              @relation("messagesReceived", fields: [receiverId], references: [id])
+  room                 Room              @relation(fields: [roomId], references: [id])
+  isRead               Boolean           @default(false)
+  isEdited             Boolean           @default(false)
+  isDeletedForEveryone Boolean           @default(false)
   deletedAt            DateTime?
   replyToId            String?
-  replyTo              Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies              Message[] @relation("Replies")
+  replyTo              Message?          @relation("Replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies              Message[]         @relation("Replies")
   forwardFromId        String?
-  forwardFrom          Message?  @relation("Forwards", fields: [forwardFromId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  forwardedMessages    Message[] @relation("Forwards")
+  forwardFrom          Message?          @relation("Forwards", fields: [forwardFromId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  forwardedMessages    Message[]         @relation("Forwards")
+  deletions            MessageDeletion[]
 
   @@index([roomId, createdAt(sort: Desc)])
+}
+
+model MessageDeletion {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
 }
 
 model Tag {
