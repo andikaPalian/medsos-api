@@ -1,4 +1,4 @@
-import { Message, Prisma } from "@prisma/client";
+import { Message, MessageDeletion, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
 import {
   GetMessageQueryArgs,
@@ -72,11 +72,11 @@ export const findManyMessageByRoom = async ({
   const queryOptions: Prisma.MessageFindManyArgs = {
     where: {
       roomId,
-      NOT: {
-        deletedFor: {
-          has: userId,
-        },
-      },
+      deletions: {
+        none: {
+          userId
+        }
+      }
     },
     take,
     orderBy: {
@@ -128,17 +128,13 @@ export const updateMessageContent = async (
 };
 
 // Query to delete the message for user by userId
-export const pushUserToDeleteFor = async (messageId: string, userId: string): Promise<Message> => {
-  return await prisma.message.update({
-    where: {
-      id: messageId,
-    },
+export const pushUserToDeleteFor = async (messageId: string, userId: string): Promise<MessageDeletion> => {
+  return await prisma.messageDeletion.create({
     data: {
-      deletedFor: {
-        push: userId,
-      },
-    },
-  });
+      messageId: messageId,
+      userId: userId
+    }
+  })
 };
 
 // Query to delete the message for everyone
