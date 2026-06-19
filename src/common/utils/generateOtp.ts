@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+export const hashToken = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
 
 export const generateVerificationCode = () => {
   const otp = crypto.randomInt(100000, 999999).toString();

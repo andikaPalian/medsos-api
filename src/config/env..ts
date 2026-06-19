@@ -12,6 +12,11 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES: z.string().default("15m") as z.ZodType<SignOptions["expiresIn"]>,
   JWT_REFRESH_EXPIRES: z.string().default("7d") as z.ZodType<SignOptions["expiresIn"]>,
   JWT_REGISTER_EXPIRES: z.string().default("1d") as z.ZodType<SignOptions["expiresIn"]>,
+
+  EMAIL_HOST: z.string().min(1, "EMAIL_HOST is required"),
+  EMAIL_HOST_PORT: z.coerce.number().default(587),
+  EMAIL_LOGIN: z.string().min(1, "EMAIL_LOGIN is required"),
+  EMAIL_PASSWORD: z.string().min(1, "EMAIL_PASSWORD is required"),
 });
 
 // Synchronus Parsing
