@@ -1,5 +1,6 @@
-import { Message } from "@prisma/client";
+import { Message, MessageDeletion } from "@prisma/client";
 import * as messageRepository from "../repositories/message.repository.js";
+import * as userRepository from "../../user/repositories/user.repository.js";
 import { logger } from "../../../common/utils/logger.js";
 import { AppError } from "../../../common/error/errorHandler.js";
 import { decryptMessage, encryptMessage } from "../../../common/utils/encrypt.js";
@@ -28,8 +29,8 @@ export const createMessage = async ({
   forwardFromId,
 }: CreateMessageArgs): Promise<MessageWithSender> => {
   const [sender, receiver] = await Promise.all([
-    messageRepository.findUserById(senderId),
-    messageRepository.findUserById(receiverId),
+    userRepository.findUserById(senderId),
+    userRepository.findUserById(receiverId),
   ]);
 
   if (!sender) {
@@ -140,7 +141,7 @@ export const editMessageContent = async (
 export const deleteMessageForHimself = async (
   userId: string,
   messageId: string,
-): Promise<Message> => {
+): Promise<MessageDeletion> => {
   const message = await messageRepository.findMessageById(messageId);
   if (!message) throw new AppError("Message not found", 404);
 
@@ -151,7 +152,7 @@ export const deleteMessageForHimself = async (
     throw new AppError("Unauthorized: You are not a participant of this chat", 403);
   }
 
-  return await messageRepository.pushUserToDeleteFor(messageId, userId);
+  return await messageRepository.createMessageDeletion(messageId, userId);
 };
 
 // Service for delete message for everyone
