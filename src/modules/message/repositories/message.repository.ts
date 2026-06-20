@@ -1,20 +1,54 @@
 import { Message, MessageDeletion, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
-import {
-  GetMessageQueryArgs,
-  InsertMessageInput,
-  MessageWithParticipants,
-  MessageWithSender,
-} from "../dto/messageRepository.js";
 
-// Query to find user by user id
-export const findUserById = async (userId: string) => {
-  return await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
-};
+interface InsertMessageInput {
+  senderId: string;
+  receiverId: string;
+  content: string;
+  iv: string;
+  replyToId?: string | null;
+  forwardFromId?: string | null;
+  chatRoomId: string;
+}
+
+interface GetMessageQueryArgs {
+  roomId: string;
+  userId: string;
+  take: number;
+  nextCursor: string | null;
+}
+
+type MessageWithSender = Prisma.MessageGetPayload<{
+  include: {
+    sender: {
+      select: {
+        id: true;
+        profilePic: true;
+        username: true;
+      };
+    };
+  };
+}>;
+
+type MessageWithParticipants = Prisma.MessageGetPayload<{
+  include: {
+    sender: {
+      select: {
+        id: true;
+        profilePic: true;
+        username: true;
+      };
+    };
+    receiver: {
+      select: {
+        id: true;
+        profilePic: true;
+        username: true;
+      };
+    };
+  };
+}>;
+
 
 // Query to find message by message id
 export const findMessageById = async (messageId: string): Promise<Message | null> => {
@@ -128,7 +162,7 @@ export const updateMessageContent = async (
 };
 
 // Query to delete the message for user by userId
-export const pushUserToDeleteFor = async (messageId: string, userId: string): Promise<MessageDeletion> => {
+export const createMessageDeletion = async (messageId: string, userId: string): Promise<MessageDeletion> => {
   return await prisma.messageDeletion.create({
     data: {
       messageId: messageId,
