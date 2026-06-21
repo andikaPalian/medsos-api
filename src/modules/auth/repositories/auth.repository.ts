@@ -1,6 +1,23 @@
 import { User, Account, RefreshToken, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
 
+interface SaveTokenArgs {
+  jti: string;
+  userId: string;
+  expiresAt: Date;
+  deviceInfo?: string | null;
+  ipAddress?: string | null;
+}
+
+interface RotateTokenArgs {
+  oldJti: string;
+  newJti: string;
+  userId: string;
+  expiresAt: Date;
+  deviceInfo?: string | null;
+  ipAddress?: string | null;
+}
+
 // Query to find a linked account by provider and providerAccountId
 export const findLinkedAccount = async (
   provider: string,
@@ -47,51 +64,61 @@ export const createUserWithAccount = async (
 };
 
 // Query to save refresh token
-export const saveRefreshToken = async (
-  userId: string,
-  refreshToken: string,
-  expiresAt: Date,
-): Promise<RefreshToken> => {
+export const saveRefreshToken = async (input: SaveTokenArgs): Promise<RefreshToken> => {
   return await prisma.refreshToken.create({
     data: {
-      userId: userId,
-      tokenHash: refreshToken,
-      expiresAt: expiresAt,
+      id: input.jti,
+      userId: input.userId,
+      expiresAt: input.expiresAt,
+      deviceInfo: input.deviceInfo,
+      ipAddress: input.ipAddress,
     },
   });
 };
 
 // Query to find refresh token
-export const findRefreshToken = async (tokenHash: string): Promise<RefreshToken | null> => {
+export const findRefreshToken = async (jti: string): Promise<RefreshToken | null> => {
   return await prisma.refreshToken.findUnique({
     where: {
-      tokenHash: tokenHash,
+      id: jti,
     },
   });
 };
 
 // Query to delete refresh token
-export const deleteRefreshToken = async (tokenHash: string): Promise<RefreshToken> => {
+export const deleteRefreshToken = async (jti: string): Promise<RefreshToken> => {
   return await prisma.refreshToken.delete({
     where: {
-      tokenHash: tokenHash,
+      id: jti,
     },
   });
 };
 
 // Query to rotate refresh token
 export const rotateRefreshToken = async (
-  oldTokenHash: string,
-  newRow: Prisma.RefreshTokenUncheckedCreateInput,
+  input: RotateTokenArgs,
 ): Promise<[RefreshToken, RefreshToken]> => {
   return await prisma.$transaction([
     prisma.refreshToken.delete({
       where: {
-        tokenHash: oldTokenHash,
+        id: input.oldJti,
       },
     }),
     prisma.refreshToken.create({
-      data: newRow,
+      data: {
+        id: input.newJti,
+        userId: input.userId,
+        expiresAt: input.expiresAt,
+        deviceInfo: input.deviceInfo,
+        ipAddress: input.ipAddress,
+      },
     }),
   ]);
+};
+
+// Query to revoke all sessions for a user
+export const revokeAllSessionForUser = async (userId: string): Promise<Prisma.BatchPayload> => {
+  return await prisma.refreshToken.deleteMany({
+    where: { userId },
+  });
 };
