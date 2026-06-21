@@ -1,33 +1,41 @@
 import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
-import crypto from "crypto";
-import { env } from "../../config/env..js";
+import { env } from "../../config/env.js";
+
+interface TokenPayload extends JwtPayload {
+  sub: string;
+  jti: string;
+  username?: string;
+}
 
 if (!process.env.JWT_SECRET || !process.env.JWT_SECRET_REFRESH) {
   throw new Error("JWT_SECRET or JWT_SECRET_REFRESH is not defined.");
 }
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET as string;
-const JWT_SECRET_REFRESH: Secret = process.env.JWT_SECRET_REFRESH as string;
+const JWT_SECRET: Secret = env.JWT_SECRET;
+const JWT_SECRET_REFRESH: Secret = env.JWT_SECRET_REFRESH;
 
 // Generate a JWT access token
 export const generateAccessToken = (userId: string, username: string): string => {
   const options: SignOptions = {
     expiresIn: env.JWT_ACCESS_EXPIRES,
+    subject: userId,
   };
-  return jwt.sign({ id: userId, username }, JWT_SECRET, options);
+  return jwt.sign({ username }, JWT_SECRET, options);
 };
 
 // Generate a JWT refresh token
-export const generateRefreshToken = (userId: string): string => {
+export const generateRefreshToken = (userId: string, jti: string): string => {
   const options: SignOptions = {
     expiresIn: env.JWT_REFRESH_EXPIRES,
+    subject: userId,
+    jwtid: jti,
   };
-  return jwt.sign({ id: userId }, JWT_SECRET_REFRESH, options);
+  return jwt.sign({}, JWT_SECRET_REFRESH, options);
 };
 
 // Calculating the refresh token expiration date
 export const getRefreshTokenExpiry = (): Date => {
-  const expiresEnv = process.env.JWT_REFRESH_EXPIRES || "7";
+  const expiresEnv = process.env.JWT_REFRESH_EXPIRES || "7d";
   const days = parseInt(expiresEnv, 10);
   const dayInMs = (isNaN(days) ? 7 : days) * 24 * 60 * 60 * 1000;
   return new Date(Date.now() + dayInMs);
@@ -42,18 +50,13 @@ export const generateRegisterToken = (payload: Record<string, unknown>): string 
 };
 
 // Verify a JWT token
-export const verifyToken = (token: string, secret: Secret = JWT_SECRET): Promise<JwtPayload> => {
+export const verifyToken = (token: string, secret: Secret = JWT_SECRET): Promise<TokenPayload> => {
   return new Promise((resolve, reject) => {
     // Run verification token in thread pool
     jwt.verify(token, secret, (err, decoded) => {
       if (err) return reject(err);
       if (!decoded) return reject(new Error("Unauthorized: Token payload is empty"));
-      resolve(decoded as JwtPayload);
+      resolve(decoded as TokenPayload);
     });
   });
-};
-
-// Hash refresh token
-export const hashRefreshToken = (token: string): string => {
-  return crypto.createHash("sha256").update(token).digest("hex");
 };
