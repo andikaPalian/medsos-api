@@ -19,7 +19,6 @@ import {
   verifyToken,
   verifyTokenIgnoreExpiry,
 } from "../../../common/utils/jwt.js";
-import { CreateUserInput } from "../dto/authRepository.js";
 import {
   AuthenticatedUserResponse,
   GoogleLoginResponseDTO,
@@ -29,6 +28,7 @@ import {
 import {
   ForgotPasswordDTO,
   LoginDTO,
+  RegisterDTO,
   ResendVerificationDTO,
   ResetPasswordDTO,
   VerifyEmailDTO,
@@ -81,8 +81,8 @@ export const generateUserSession = async (
 };
 
 // Service function for user registration with email and password
-export const register = async (userData: CreateUserInput): Promise<AuthenticatedUserResponse> => {
-  const { username, email, password } = userData;
+export const register = async (input: RegisterDTO): Promise<AuthenticatedUserResponse> => {
+  const { username, email, password } = input;
   // Check if user with the same email already exists
   const emailExists = await userRepository.findUserByEmail(email);
   if (emailExists) {
