@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../common/error/errorHandler.js";
 import { verifyToken } from "../common/utils/jwt.js";
-import { UserSession } from "../types/auth/session.type.js";
+
+interface UserSession {
+  id: string;
+  username: string;
+}
 
 export const userAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   let token = req.cookies?.accessToken;
@@ -11,9 +15,7 @@ export const userAuth = async (req: Request, _res: Response, next: NextFunction)
   }
 
   if (!token) {
-    return next(
-      new AppError("Authentication failed. Access token is missing. Please login.", 401),
-    );
+    return next(new AppError("Authentication failed. Access token is missing. Please login.", 401));
   }
 
   try {
@@ -33,4 +35,4 @@ export const userAuth = async (req: Request, _res: Response, next: NextFunction)
 
     return next(new AppError(errorMessage, 401));
   }
-}
+};
