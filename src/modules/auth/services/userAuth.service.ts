@@ -217,12 +217,15 @@ export const login = async (
 
   // Check if user registered with OAuth or email/password
   if (!user.password) {
-    throw new AppError("User registered with OAuth. Please login with google", 400);
+    throw new AppError("This account uses Google login. Please sign in with Google.", 400);
   }
 
   // Check if user is verified
   if (user.isVerified === false) {
-    throw new AppError("User is not verified. Please verify your email first", 401);
+    throw new AppError(
+      "Email is not verified. Please check your email to verify your account.",
+      403,
+    );
   }
 
   // Validate password
@@ -236,7 +239,7 @@ export const login = async (
 
   const { password: _, ...safeUserData } = user;
 
-  logger.info(`[AUTH SERVICE] User logged in with email": ${input.email}`);
+  logger.info(`[AUTH SERVICE] User logged in: ${user.id}`);
 
   return { user: safeUserData, accessToken, refreshToken };
 };
