@@ -25,3 +25,12 @@ export type GoogleLoginResponseDTO =
       isNewUser: false;
       user: AuthenticatedUserResponse;
     };
+
+export interface ActiveSessionResponseDTO {
+  id: string;
+  browser: string;
+  os: string;
+  ipAddress: string;
+  currentSession: boolean;
+  createdAt: Date;
+}

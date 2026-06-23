@@ -8,7 +8,10 @@ interface ExtractedContent {
 }
 
 export const extractSecurityContext = (req: Request): ExtractedContent => {
-  const ipAddress = (req.ip || req.headers["x-forwarded-for"] || "unknown") as string;
+  const xForwardedFor = req.headers["x-forwarded-for"];
+  const rawIp =
+    req.ip || (typeof xForwardedFor === "string" ? xForwardedFor.split(",")[0] : "unknown");
+  const ipAddress = rawIp === "::1" ? "127.0.0.1" : rawIp;
 
   const userAgentString = req.headers["user-agent"] || "";
   const parser = new UAParser(userAgentString);
@@ -17,7 +20,7 @@ export const extractSecurityContext = (req: Request): ExtractedContent => {
   const browser = result.browser.name || "Unknown Browser";
   const osName = result.os.name || "Unknown OS";
   const osVersion = result.os.version ? `${result.os.version}` : "";
-  const os = `${osName}${osVersion}`;
+  const os = `${osName} ${osVersion}`;
 
   return { browser, os, ipAddress };
 };

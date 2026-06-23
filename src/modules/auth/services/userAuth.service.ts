@@ -20,6 +20,7 @@ import {
   verifyTokenIgnoreExpiry,
 } from "../../../common/utils/jwt.js";
 import {
+  ActiveSessionResponseDTO,
   AuthenticatedUserResponse,
   GoogleLoginResponseDTO,
   LoginResponseDTO,
@@ -36,7 +37,8 @@ import {
 import { env } from "../../../config/env.js";
 
 interface SecurityContext {
-  deviceInfo?: string | null;
+  browser?: string | null;
+  os?: string | null;
   ipAddress?: string | null;
 }
 
@@ -73,7 +75,8 @@ export const generateUserSession = async (
     jti,
     userId,
     expiresAt,
-    deviceInfo: context?.deviceInfo,
+    browser: context?.browser,
+    os: context?.os,
     ipAddress: context?.ipAddress,
   });
 
@@ -280,7 +283,8 @@ export const refreshSession = async (
     newJti,
     userId,
     expiresAt: newExpiresAt,
-    deviceInfo: context?.deviceInfo || tokenRecord.deviceInfo,
+    browser: context?.browser || tokenRecord.browser,
+    os: context?.os || tokenRecord.os,
     ipAddress: context?.ipAddress || tokenRecord.ipAddress,
   });
 
@@ -465,4 +469,22 @@ export const logout = async (refreshToken: string): Promise<void> => {
   } catch (error) {
     logger.warn(`[AUTH SERVICE] Logout warning: Token code not found or already missing in DB`);
   }
+};
+
+export const getActiveSessions = async (
+  userId: string,
+  currentJti?: string,
+): Promise<ActiveSessionResponseDTO[]> => {
+  const sessions = await authRepository.findAllSessionByUserId(userId);
+
+  return sessions.map(
+    (session): ActiveSessionResponseDTO => ({
+      id: session.id,
+      browser: session.browser || "Unknown Browser",
+      os: session.os || "Unknown OS",
+      ipAddress: session.ipAddress || "Unknown IP",
+      currentSession: session.id === currentJti,
+      createdAt: session.createdAt,
+    }),
+  );
 };

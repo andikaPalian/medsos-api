@@ -15,7 +15,8 @@ interface RotateTokenArgs {
   newJti: string;
   userId: string;
   expiresAt: Date;
-  deviceInfo?: string | null;
+  browser?: string | null;
+  os?: string | null;
   ipAddress?: string | null;
 }
 
@@ -111,7 +112,8 @@ export const rotateRefreshToken = async (
         id: input.newJti,
         userId: input.userId,
         expiresAt: input.expiresAt,
-        deviceInfo: input.deviceInfo,
+        browser: input.browser,
+        os: input.os,
         ipAddress: input.ipAddress,
       },
     }),
@@ -122,5 +124,14 @@ export const rotateRefreshToken = async (
 export const revokeAllSessionForUser = async (userId: string): Promise<Prisma.BatchPayload> => {
   return await prisma.refreshToken.deleteMany({
     where: { userId },
+  });
+};
+
+export const findAllSessionByUserId = async (userId: string): Promise<RefreshToken[]> => {
+  return await prisma.refreshToken.findMany({
+    where: { userId },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 };
