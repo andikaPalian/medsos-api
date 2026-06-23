@@ -5,7 +5,8 @@ interface SaveTokenArgs {
   jti: string;
   userId: string;
   expiresAt: Date;
-  deviceInfo?: string | null;
+  browser?: string | null;
+  os?: string | null;
   ipAddress?: string | null;
 }
 
@@ -70,7 +71,8 @@ export const saveRefreshToken = async (input: SaveTokenArgs): Promise<RefreshTok
       id: input.jti,
       userId: input.userId,
       expiresAt: input.expiresAt,
-      deviceInfo: input.deviceInfo,
+      browser: input.browser,
+      os: input.os,
       ipAddress: input.ipAddress,
     },
   });
