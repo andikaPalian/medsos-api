@@ -23,9 +23,9 @@ model User {
   profilePublicId          String?
   isPrivate                Boolean   @default(false)
   isVerified               Boolean   @default(false)
-  verificationToken        String? // Untuk email verification
+  verificationToken        String?   @unique // Untuk email verification
   verificationTokenExpiry  DateTime?
-  resetPasswordToken       String? // Untuk reset password
+  resetPasswordToken       String?   @unique // Untuk reset password
   resetPasswordTokenExpiry DateTime?
   followersCount           Int       @default(0)
   followingCount           Int       @default(0)
