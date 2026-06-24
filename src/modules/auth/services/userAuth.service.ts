@@ -156,11 +156,20 @@ export const verifyEmail = async ({
   logger.info(`[AUTH SERVICE] User verified with email: ${email}`);
 
   // Update user as verified
-  return await userRepository.updateUserByEmail(email, {
+  const updatedUser = await userRepository.updateUserByEmail(email, {
     isVerified: true,
     verificationToken: null,
     verificationTokenExpiry: null,
   });
+
+  const {
+    password: _,
+    verificationToken: __,
+    verificationTokenExpiry: ___,
+    ...safeUserDataa
+  } = updatedUser;
+
+  return safeUserDataa;
 };
 
 // Service function to resend verification email
