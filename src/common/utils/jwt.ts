@@ -35,10 +35,14 @@ export const generateRefreshToken = (userId: string, jti: string): string => {
 
 // Calculating the refresh token expiration date
 export const getRefreshTokenExpiry = (): Date => {
-  const expiresEnv = process.env.JWT_REFRESH_EXPIRES || "7d";
-  const days = parseInt(expiresEnv, 10);
-  const dayInMs = (isNaN(days) ? 7 : days) * 24 * 60 * 60 * 1000;
-  return new Date(Date.now() + dayInMs);
+  const expiry = env.JWT_REFRESH_EXPIRES as string;
+  const match = expiry.match(/^(\d+)(s|m|h|d)$/);
+  if (!match) throw new Error(`Invalid JWT_REFRESH_EXPIRES format: ${expiry}`);
+
+  const value = parseInt(match[1]);
+  const unit = match[2];
+  const multipliers = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+  return new Date(Date.now() + value * multipliers[unit as keyof typeof multipliers]);
 };
 
 // OAuth registration token
