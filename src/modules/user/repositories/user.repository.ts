@@ -1,5 +1,6 @@
 import { User, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
+import { DuplicateEntryError } from "../../../common/error/domain.error.js";
 
 // Query to find a user by ID
 export const findUserById = async (userId: string): Promise<User | null> => {
@@ -38,9 +39,19 @@ export const findUserByToken = async (token: string): Promise<User | null> => {
 
 // Query to create a new user
 export const createUser = async (userData: Prisma.UserCreateInput): Promise<User> => {
-  return await prisma.user.create({
-    data: userData,
-  });
+  try {
+    return await prisma.user.create({
+      data: userData,
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const target = error.meta?.target as string[] | undefined;
+      const field = target?.[0] || "fields";
+
+      throw new DuplicateEntryError(field, `Duplicate value on field: ${field}`);
+    }
+    throw error;
+  }
 };
 
 // Query to update user data by ID

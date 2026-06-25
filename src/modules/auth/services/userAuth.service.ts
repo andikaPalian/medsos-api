@@ -35,6 +35,7 @@ import {
   VerifyEmailDTO,
 } from "../dto/auth-request.dto.js";
 import { env } from "../../../config/env.js";
+import { DuplicateEntryError } from "../../../common/error/domain.error.js";
 
 interface SecurityContext {
   browser?: string | null;
@@ -86,53 +87,59 @@ export const generateUserSession = async (
 // Service function for user registration with email and password
 export const register = async (input: RegisterDTO): Promise<AuthenticatedUserResponse> => {
   const { username, email, password } = input;
-  // Check if user with the same email already exists
-  const emailExists = await userRepository.findUserByEmail(email);
-  if (emailExists) {
-    throw new AppError("Email already exists and taken", 400);
-  }
+  // Check if user with the same email and username already exists
+  const [emailExists, usernameExists] = await Promise.all([
+    await userRepository.findUserByEmail(email),
+    await userRepository.findUserByUsername(username),
+  ]);
+  if (emailExists) throw new AppError("Email already taken", 400);
+  if (usernameExists) throw new AppError("Username already taken", 400);
 
-  // Check if user with the same username already exists
-  const usernameExists = await userRepository.findUserByUsername(username);
-  if (usernameExists) {
-    throw new AppError("Username already exists and taken", 400);
-  }
+  // Hash password and generate verification code
+  const [hashedPassword, { otp, hashedOtp, otpExpiry }] = await Promise.all([
+    bcrypt.hash(password, 12),
+    Promise.resolve(generateVerificationCode()),
+  ]);
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 12);
-
-  // Otp
-  const { otp, hashedOtp, otpExpiry } = generateVerificationCode();
-
-  // Create/Register new user
-  const newUser = await userRepository.createUser({
-    username,
-    email,
-    password: hashedPassword,
-    isVerified: false,
-    verificationToken: hashedOtp,
-    verificationTokenExpiry: otpExpiry,
-  });
-
-  // Send verification email
-  transporter
-    .sendMail({
-      from: process.env.FROM_EMAIL,
-      to: email,
-      subject: "Email Verification Code",
-      text: `Your verification code is ${otp}. It is valid for 5 minutes.`,
-    })
-    .catch((error) => {
-      logger.error(
-        `[AUTH SERVICE] Failed to send verification email to ${email}: ${error.message}`,
-      );
+  try {
+    // Create/Register new user
+    const newUser = await userRepository.createUser({
+      username,
+      email,
+      password: hashedPassword,
+      isVerified: false,
+      verificationToken: hashedOtp,
+      verificationTokenExpiry: otpExpiry,
     });
 
-  const { password: _, verificationToken, verificationTokenExpiry, ...safeUserData } = newUser;
+    // Send verification email
+    transporter
+      .sendMail({
+        from: process.env.FROM_EMAIL,
+        to: email,
+        subject: "Email Verification Code",
+        text: `Your verification code is ${otp}. It is valid for 5 minutes.`,
+      })
+      .catch((error) => {
+        logger.error(
+          `[AUTH SERVICE] Failed to send verification email to ${email}: ${error.message}`,
+        );
+      });
 
-  logger.info(`[AUTH SERVICE] New user registered with email: ${email}`);
+    const { password: _, verificationToken, verificationTokenExpiry, ...safeUserData } = newUser;
 
-  return safeUserData;
+    logger.info(`[AUTH SERVICE] New user registered with email: ${email}`);
+
+    return safeUserData;
+  } catch (error) {
+    if (error instanceof DuplicateEntryError) {
+      throw new AppError(
+        error.field === "email" ? "Email already taken" : "Username already taken",
+        409,
+      );
+    }
+    throw new Error();
+  }
 };
 
 // Service function for email verification
