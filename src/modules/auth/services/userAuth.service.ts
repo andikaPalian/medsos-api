@@ -189,8 +189,10 @@ export const resendVerificationEmail = async ({ email }: ResendVerificationDTO):
 
   // Check if existing token is still valid
   if (user.verificationTokenExpiry && user.verificationTokenExpiry > new Date()) {
+    const remainingMs = user.verificationTokenExpiry.getTime() - Date.now();
+    const remainingMin = Math.ceil(remainingMs / 60_000);
     throw new AppError(
-      "Verification token is still valid. Please wait 5 minutes before requesting a new one",
+      `Please wait ${remainingMin} minutes before resending a new verification code`,
       400,
     );
   }
