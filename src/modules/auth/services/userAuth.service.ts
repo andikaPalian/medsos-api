@@ -89,17 +89,17 @@ export const register = async (input: RegisterDTO): Promise<AuthenticatedUserRes
   const { username, email, password } = input;
   // Check if user with the same email and username already exists
   const [emailExists, usernameExists] = await Promise.all([
-    await userRepository.findUserByEmail(email),
-    await userRepository.findUserByUsername(username),
+    userRepository.findUserByEmail(email),
+    userRepository.findUserByUsername(username),
   ]);
   if (emailExists) throw new AppError("Email already taken", 400);
   if (usernameExists) throw new AppError("Username already taken", 400);
 
-  // Hash password and generate verification code
-  const [hashedPassword, { otp, hashedOtp, otpExpiry }] = await Promise.all([
-    bcrypt.hash(password, 12),
-    Promise.resolve(generateVerificationCode()),
-  ]);
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  // Generate OTP
+  const { otp, hashedOtp, otpExpiry } = generateVerificationCode();
 
   try {
     // Create/Register new user
@@ -138,7 +138,7 @@ export const register = async (input: RegisterDTO): Promise<AuthenticatedUserRes
         409,
       );
     }
-    throw new Error();
+    throw error;
   }
 };
 
