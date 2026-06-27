@@ -1,6 +1,6 @@
 import { User, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
-import { DuplicateEntryError } from "../../../common/error/domain.error.js";
+import { handlePrismaError } from "../../../common/utils/prismaErrorHandler.js";
 
 // Query to find a user by ID
 export const findUserById = async (userId: string): Promise<User | null> => {
@@ -44,13 +44,7 @@ export const createUser = async (userData: Prisma.UserCreateInput): Promise<User
       data: userData,
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const target = error.meta?.target as string[] | undefined;
-      const field = target?.[0] || "fields";
-
-      throw new DuplicateEntryError(field, `Duplicate value on field: ${field}`);
-    }
-    throw error;
+    return handlePrismaError(error);
   }
 };
 
@@ -59,12 +53,16 @@ export const updateUserById = async (
   userId: string,
   updateData: Prisma.UserUpdateInput,
 ): Promise<User> => {
-  return await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: updateData,
-  });
+  try {
+    return await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: updateData,
+    });
+  } catch (error) {
+    return handlePrismaError(error);
+  }
 };
 
 // Query to update user data by email
@@ -72,8 +70,12 @@ export const updateUserByEmail = async (
   email: string,
   updateData: Prisma.UserUpdateInput,
 ): Promise<User> => {
-  return await prisma.user.update({
-    where: { email },
-    data: updateData,
-  });
+  try {
+    return await prisma.user.update({
+      where: { email },
+      data: updateData,
+    });
+  } catch (error) {
+    return handlePrismaError(error);
+  }
 };
