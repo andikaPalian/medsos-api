@@ -20,14 +20,16 @@ const envSchema = z.object({
   FROM_EMAIL: z.string().email("FROM_EMAIL must be a valid email"),
   RESET_PASSWORD_URL: z.string().url("RESET_PASSWORD_URL must be a valid url"),
 
+  APP_NAME: z.string().default("social-media-api"),
+
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
 
   AUTH_LIMIT_WINDOW_MINS: z.coerce.number().positive().default(15),
-  AUTH_LIMIT_MAX_ATTEMPS: z.coerce.number().positive().default(10),
+  AUTH_LIMIT_MAX_ATTEMPTS: z.coerce.number().positive().default(10),
   EMAIL_LIMIT_WINDOW_MINS: z.coerce.number().positive().default(5),
-  EMAIL_LIMIT_MAX_ATTEMPS: z.coerce.number().positive().default(3),
+  EMAIL_LIMIT_MAX_ATTEMPTS: z.coerce.number().positive().default(3),
   GLOBAL_LIMIT_WINDOW_MINS: z.coerce.number().positive().default(1),
-  GLOBAL_LIMIT_MAX_ATTEMPS: z.coerce.number().positive().default(100),
+  GLOBAL_LIMIT_MAX_ATTEMPTS: z.coerce.number().positive().default(100),
 });
 
 // Synchronus Parsing
