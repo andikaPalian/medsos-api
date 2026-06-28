@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "tsc watch src/server.js",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "db:studio": "prisma studio",
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
     "prisma:db:push": "prisma db push",
     "prisma:format": "prisma format"
   },
