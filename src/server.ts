@@ -4,6 +4,7 @@ import { Server as SocketServer } from "socket.io";
 import { env } from "./config/env.js";
 import { logger } from "./common/utils/logger.js";
 import { createApp } from "./app.js";
+import { closeRedisConnection } from "./config/redis.js";
 
 const httpServer = createServer();
 
@@ -33,9 +34,12 @@ io.on("connection", (socket) => {
 const gracefulShutdown = (signal: string): void => {
   logger.info(`[SERVER] ${signal} received - shutting down gracefully`);
 
-  httpServer.close(() => {
+  httpServer.close(async () => {
     logger.info("[SERVER HTTP server closed");
-    logger.info("[SERVER Process terminated");
+
+    await closeRedisConnection();
+
+    logger.info("[SERVER All connections closed. Process terminated.");
     process.exit(0);
   });
 
