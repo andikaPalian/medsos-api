@@ -30,6 +30,10 @@ const envSchema = z.object({
   EMAIL_LIMIT_MAX_ATTEMPTS: z.coerce.number().positive().default(3),
   GLOBAL_LIMIT_WINDOW_MINS: z.coerce.number().positive().default(1),
   GLOBAL_LIMIT_MAX_ATTEMPTS: z.coerce.number().positive().default(100),
+
+  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+  GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+  GOOGLE_CALLBACK_URL: z.string().url("GOOGLE_CALLBACK_URL must be a valid URL"),
 });
 
 // Synchronus Parsing
