@@ -7,6 +7,8 @@ import { env } from "./config/env.js";
 import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import { logger } from "./common/utils/logger.js";
 import { messageRouter } from "./modules/message/routes/message.routes.js";
+import { globalLimiter } from "./middlewares/rateLimiter.js";
+import { userAuthRouter } from "./modules/auth/routes/userAuth.routes.js";
 
 const API_PREFIX = "api/v1" as const;
 
@@ -54,6 +56,9 @@ export const createApp = (io: SocketServer) => {
     });
   });
 
+  app.use(globalLimiter);
+
+  app.use(`${API_PREFIX}/auth`, userAuthRouter);
   app.use(`${API_PREFIX}/message`, messageRouter);
 
   app.use((_req: Request, res: Response) => {
