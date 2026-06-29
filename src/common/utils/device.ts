@@ -8,10 +8,8 @@ interface ExtractedContent {
 }
 
 export const extractSecurityContext = (req: Request): ExtractedContent => {
-  const xForwardedFor = req.headers["x-forwarded-for"];
-  const rawIp =
-    req.ip || (typeof xForwardedFor === "string" ? xForwardedFor.split(",")[0] : "unknown");
-  const ipAddress = rawIp === "::1" ? "127.0.0.1" : rawIp;
+  const rawIp = req.ip ?? "unknown";
+  const ipAddress = rawIp === "::1" ? "127.0.0.1" : rawIp.replace(/^::ffff:/, "");
 
   const userAgentString = req.headers["user-agent"] || "";
   const parser = new UAParser(userAgentString);
