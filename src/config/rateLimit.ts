@@ -1,6 +1,5 @@
-import { rateLimit, Options, RateLimitExceededEventHandler } from "express-rate-limit";
-import { RedisStore, SendCommandFn } from "rate-limit-redis";
-import { Request, Response } from "express";
+import { RateLimiterRedis, RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import { redisClient } from "./redis.js";
 import { logger } from "../common/utils/logger.js";
 // Namespace global Redis keys for rate limiting to avoid collisions with other Redis usage in the application
@@ -19,50 +18,57 @@ export const createLimiter = ({
   maxAttempts,
   message,
   limiterName,
-}: CreateLimiterOptions): RateLimitExceededEventHandler => {
-  // Fail fast
-  if (!limiterName) {
-    throw new Error("CRITICAL: limiterName is required to create a rate limiter instance.");
-  }
-
-  if (!windowMins || !maxAttempts) {
-    throw new Error(
-      "CRITICAL: windowMins and maxAttempts are required to create a rate limiter instance.",
-    );
-  }
-
+}: CreateLimiterOptions): RequestHandler => {
   // Use parseInt with radix 10 for security parse
-  const windowMs = windowMins * 60 * 1000;
+  const duration = windowMins * 60;
 
-  const sendCommand: SendCommandFn = (...args: string[]) =>
-    redisClient.call(args[0], ...args.slice(1)) as ReturnType<SendCommandFn>;
-
-  const limiterOptions: Partial<Options> = {
-    windowMs,
-    max: maxAttempts,
-    standardHeaders: "draft-7",
-    legacyHeaders: false,
-    message: {
-      success: false,
-      statusCode: 429,
-      error: "TOO_MANY_REQUESTS",
-      message,
-    },
-    // Integrate Redis
-    store: new RedisStore({
-      prefix: `${REDIS_KEY_PREFIX}${limiterName}:`,
-      sendCommand,
+  const limiter = new RateLimiterRedis({
+    storeClient: redisClient,
+    keyPrefix: `${REDIS_KEY_PREFIX}${limiterName}`,
+    points: maxAttempts,
+    duration,
+    insuranceLimiter: new RateLimiterMemory({
+      keyPrefix: `${REDIS_KEY_PREFIX}${limiterName}:insurance`,
+      points: maxAttempts,
+      duration,
     }),
-    // If Redis is down, prioritize application continuity
-    passOnStoreError: true,
-    keyGenerator: (req: Request): string => req.ip ?? "unknown",
-    handler: (req: Request, res: Response, _next, options) => {
-      logger.warn(
-        `[RATE LIMIT] Limiter: ${limiterName} | IP: ${req.ip ?? "unknown"} | Path: ${req.originalUrl}`,
-      );
-      res.status(options.statusCode).json(options.message);
-    },
-  };
+  });
 
-  return rateLimit(limiterOptions);
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const key = req.ip ?? "unknown";
+
+    try {
+      await limiter.consume(key);
+      next();
+    } catch (error) {
+      if (error instanceof RateLimiterRes) {
+        const retryAfterSecs = Math.ceil(error.msBeforeNext / 1000);
+
+        logger.warn(
+          `[RATE LIMITER] Limiter: ${limiterName} | IP: ${key} | Path: ${req.originalUrl} | Retry after: ${retryAfterSecs}s`,
+        );
+
+        res.set({
+          "Retry-After": String(retryAfterSecs),
+          "X-RateLimit-Limit": String(maxAttempts),
+          "X-RateLimit-Remaining": String(error.remainingPoints ?? 0),
+          "X-RateLimit-Reset": String(Math.ceil((Date.now() + error.msBeforeNext) / 1000)),
+        });
+
+        res.status(429).json({
+          success: false,
+          statusCode: 429,
+          error: "TOO_MANY_REQUESTS",
+          message,
+          retryAfter: retryAfterSecs,
+        });
+        return;
+      }
+
+      logger.warn(
+        `[RATE LIMITER] Unexpected error in limiter ${limiterName}: ${(error as Error).message}`,
+      );
+      next(error);
+    }
+  };
 };
