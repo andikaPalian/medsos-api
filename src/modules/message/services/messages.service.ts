@@ -4,10 +4,7 @@ import * as userRepository from "../../user/repositories/user.repository.js";
 import { logger } from "../../../common/utils/logger.js";
 import { AppError } from "../../../common/error/errorHandler.js";
 import { decryptMessage, encryptMessage } from "../../../common/utils/encrypt.js";
-import {
-  CreateMessageArgs,
-  PaginatedMessageResponse,
-} from "../dto/messageService.js";
+import { CreateMessageArgs, PaginatedMessageResponse } from "../dto/messageService.js";
 
 const RECALL_MESSAGE_WINDOW_HOURS = 24;
 const DEFAULT_CHAT_LIMIT = 30;
