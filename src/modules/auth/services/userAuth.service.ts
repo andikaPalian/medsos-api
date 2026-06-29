@@ -43,7 +43,7 @@ interface SecurityContext {
   ipAddress?: string | null;
 }
 
-interface GoogleProfile {
+export interface GoogleProfile {
   id: string;
   displayName: string;
   emails?: Array<{ value: string }>;
