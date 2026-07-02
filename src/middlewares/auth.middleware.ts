@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../common/error/errorHandler.js";
-import { verifyToken } from "../common/utils/jwt.js";
+import { TokenPayload, verifyToken } from "../common/utils/jwt.js";
 
-interface UserSession {
-  id: string;
-  username: string;
-}
+// interface UserSession {
+//   id: string;
+//   username: string;
+// }
 
 export const userAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   let token = req.cookies?.accessToken;
@@ -19,20 +19,20 @@ export const userAuth = async (req: Request, _res: Response, next: NextFunction)
   }
 
   try {
-    const decoded = (await verifyToken(token)) as unknown as UserSession;
+    const decoded = (await verifyToken(token)) as TokenPayload;
 
     req.user = {
       id: decoded.id,
       username: decoded.username,
     };
 
-    return next();
+    next();
   } catch (error) {
     const isTokenExpired = error instanceof Error && error.name === "TokenExpiredError";
     const errorMessage = isTokenExpired
       ? "Unauthorized: Token expired."
       : "Unauthorized: Invalid Token.";
 
-    return next(new AppError(errorMessage, 401));
+    next(new AppError(errorMessage, 401));
   }
 };
