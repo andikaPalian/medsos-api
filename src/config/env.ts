@@ -34,6 +34,11 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
   GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
   GOOGLE_CALLBACK_URL: z.string().url("GOOGLE_CALLBACK_URL must be a valid URL"),
+
+  // CLOUDINARY
+  CLOUDINARY_CLOUD_NAMES: z.string().min(1, "CLOUDINARY_CLOUD_NAMES is required"),
+  CLOUDINARY_API_KEYS: z.string().min(1, "CLOUDINARY_API_KEYS is required"),
+  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
 });
 
 // Synchronus Parsing

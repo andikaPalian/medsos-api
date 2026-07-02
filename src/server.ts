@@ -5,6 +5,7 @@ import { env } from "./config/env.js";
 import { logger } from "./common/utils/logger.js";
 import { createApp } from "./app.js";
 import { closeRedisConnection } from "./config/redis.js";
+import { connectCloudinary } from "./config/cloudinary.js";
 
 const httpServer = createServer();
 
@@ -64,7 +65,8 @@ process.on("uncaughtException", (error: Error) => {
 
 const boostrap = async (): Promise<void> => {
   try {
-    // TODO: Add cloudinary or cloud storage
+    await connectCloudinary();
+    logger.info("[SERVER] Cloudinary connected.");
 
     httpServer.listen(env.PORT, () => {
       logger.info(`[SERVER] Running in ${env.NODE_ENV} mode`);
