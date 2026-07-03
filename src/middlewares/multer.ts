@@ -6,7 +6,7 @@ import { AppError } from "../common/error/errorHandler.js";
 const UPLOAD_CONFIG = {
   IMAGE: {
     MAX_SIZE: 1024 * 1024 * 5, // 5MB
-    MIME_TYPES: new Set(["image/png", "image/jpg", "image/jpeg"]),
+    MIME_TYPES: new Set(["image/png", "image/jpeg"]),
   },
   VIDEO: {
     MAX_SIZE: 1024 * 1024 * 50, // 50MB,
@@ -24,7 +24,7 @@ const imageFileFilter = (
   } else {
     logger.warn(`[MULTER] Blocked invalid file. File: ${file.originalname} (${file.mimetype})`);
     callback(
-      new AppError("Invalid file type. Only PNG, JPG, and JPEG files are allowed for images.", 400),
+      new AppError("Invalid file type. Only PNG, and JPEG files are allowed for images.", 400),
     );
   }
 };
