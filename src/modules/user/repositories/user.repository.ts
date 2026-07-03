@@ -2,6 +2,43 @@ import { User, Prisma } from "@prisma/client";
 import { prisma } from "../../../config/client.js";
 import { handlePrismaError } from "../../../common/utils/prismaErrorHandler.js";
 
+const UserProfileSelct = Prisma.validator<Prisma.UserSelect>()({
+  id: true,
+  username: true,
+  fullName: true,
+  bio: true,
+  profilePic: true,
+  isPrivate: true,
+  isVerified: true,
+  followersCount: true,
+  followingCount: true,
+  posts: {
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      caption: true,
+      totalLikes: true,
+      createdAt: true,
+      media: {
+        select: {
+          id: true,
+          url: true,
+          type: true,
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      posts: true,
+    },
+  },
+});
+
+export type UserProfileResult = Prisma.UserGetPayload<{ select: typeof UserProfileSelct }>;
+
 // Query to find a user by ID
 export const findUserById = async (userId: string): Promise<User | null> => {
   return await prisma.user.findUnique({
@@ -78,4 +115,13 @@ export const updateUserByEmail = async (
   } catch (error) {
     return handlePrismaError(error);
   }
+};
+
+export const findUserProfileById = async (userId: string): Promise<UserProfileResult | null> => {
+  return await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: UserProfileSelct,
+  });
 };
