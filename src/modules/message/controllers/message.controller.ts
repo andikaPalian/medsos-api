@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { z } from "zod";
 import * as messageService from "../services/messages.service.js";
 import {
@@ -8,9 +8,10 @@ import {
   sendMessageSchema,
   updateMessageSchema,
 } from "../validators/message.validation.js";
+import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
 
 export const sendMessage = async (
-  req: Request<any, any, z.infer<typeof sendMessageSchema>["body"]>,
+  req: AuthenticatedRequest<any, any, z.infer<typeof sendMessageSchema>["body"]>,
   res: Response,
 ): Promise<void> => {
   const senderId = req.user.id;
@@ -32,7 +33,7 @@ export const sendMessage = async (
 };
 
 export const getMessages = async (
-  req: Request<GetMessagesParams, any, any, any>,
+  req: AuthenticatedRequest<GetMessagesParams, any, any, any>,
   res: Response,
 ): Promise<void> => {
   const userId = req.user.id;
@@ -51,7 +52,7 @@ export const getMessages = async (
 };
 
 export const updateMessage = async (
-  req: Request<
+  req: AuthenticatedRequest<
     z.infer<typeof updateMessageSchema>["params"],
     any,
     z.infer<typeof updateMessageSchema>["body"]
@@ -72,7 +73,7 @@ export const updateMessage = async (
 };
 
 export const purgeMessageForMe = async (
-  req: Request<z.infer<typeof messageIdParamSchema>["params"]>,
+  req: AuthenticatedRequest<z.infer<typeof messageIdParamSchema>["params"]>,
   res: Response,
 ): Promise<void> => {
   const userId = req.user.id;
@@ -88,7 +89,7 @@ export const purgeMessageForMe = async (
 };
 
 export const recallMessageForEveryone = async (
-  req: Request<z.infer<typeof messageIdParamSchema>["params"]>,
+  req: AuthenticatedRequest<z.infer<typeof messageIdParamSchema>["params"]>,
   res: Response,
 ): Promise<void> => {
   const userId = req.user.id;
