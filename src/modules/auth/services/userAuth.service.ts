@@ -290,9 +290,15 @@ export const refreshSession = async (
     throw new AppError("Security issue. Please login again", 401);
   }
 
+  const user = await userRepository.findUserById(userId);
+  if (!user) {
+    await authRepository.revokeAllSessionForUser(userId);
+    throw new AppError("User no longer exists. Please login again", 401);
+  }
+
   // Generate new access token and refresh token
   const newJti = generateJti();
-  const newAccessToken = generateAccessToken(userId, decoded.username || "");
+  const newAccessToken = generateAccessToken(userId, user.username);
   const newRefreshToken = generateRefreshToken(userId, newJti);
   const newExpiresAt = getRefreshTokenExpiry();
 
