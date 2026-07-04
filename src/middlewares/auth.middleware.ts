@@ -1,11 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../common/error/errorHandler.js";
-import { TokenPayload, verifyToken } from "../common/utils/jwt.js";
-
-// interface UserSession {
-//   id: string;
-//   username: string;
-// }
+import { verifyToken } from "../common/utils/jwt.js";
 
 export const userAuth = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   let token = req.cookies?.accessToken;
@@ -19,10 +14,10 @@ export const userAuth = async (req: Request, _res: Response, next: NextFunction)
   }
 
   try {
-    const decoded = (await verifyToken(token)) as TokenPayload;
+    const decoded = await verifyToken(token);
 
     req.user = {
-      id: decoded.id,
+      id: decoded.sub,
       username: decoded.username,
     };
 

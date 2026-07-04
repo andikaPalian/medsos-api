@@ -1,10 +1,16 @@
 import jwt, { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
 import { env } from "../../config/env.js";
 
-export interface TokenPayload extends JwtPayload {
+export type BaseTokenPayload = JwtPayload;
+
+export interface AccessTokenPayload extends BaseTokenPayload {
+  sub: string;
+  username: string;
+}
+
+export interface RefreshTokenPayload extends BaseTokenPayload {
   sub: string;
   jti: string;
-  username?: string;
 }
 
 if (!process.env.JWT_SECRET || !process.env.JWT_SECRET_REFRESH) {
@@ -54,13 +60,16 @@ export const generateRegisterToken = (payload: Record<string, unknown>): string 
 };
 
 // Verify a JWT token
-export const verifyToken = (token: string, secret: Secret = JWT_SECRET): Promise<TokenPayload> => {
+export const verifyToken = <T extends BaseTokenPayload = AccessTokenPayload>(
+  token: string,
+  secret: Secret = JWT_SECRET,
+): Promise<T> => {
   return new Promise((resolve, reject) => {
     // Run verification token in thread pool
     jwt.verify(token, secret, (err, decoded) => {
       if (err) return reject(err);
       if (!decoded) return reject(new Error("Unauthorized: Token payload is empty"));
-      resolve(decoded as TokenPayload);
+      resolve(decoded as T);
     });
   });
 };
@@ -68,12 +77,12 @@ export const verifyToken = (token: string, secret: Secret = JWT_SECRET): Promise
 export const verifyTokenIgnoreExpiry = (
   token: string,
   secret: Secret = JWT_SECRET_REFRESH,
-): Promise<TokenPayload> => {
+): Promise<RefreshTokenPayload> => {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secret, { ignoreExpiration: true }, (err, decoded) => {
       if (err) return reject(err);
       if (!decoded) return reject(new Error("Unauthorized: Token payload is empty"));
-      resolve(decoded as TokenPayload);
+      resolve(decoded as RefreshTokenPayload);
     });
   });
 };

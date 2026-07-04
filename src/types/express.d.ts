@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { UserSession } from "../modules/auth/dto/session.type.ts";
+import { UserSession } from "../common/types/authenticated-request.ts";
 
 declare global {
   namespace Express {
