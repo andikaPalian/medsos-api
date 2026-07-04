@@ -3,8 +3,7 @@ import { logger } from "../../../common/utils/logger.js";
 import { UpdateUserDataDTO, UserUpdateData } from "../dto/user-request.dto.js";
 import * as userRepository from "../repositories/user.repository.js";
 import * as followRepository from "../../follow/repositories/follow.repository.js";
-import { cloudinary } from "../../../config/cloudinary.js";
-import fs from "fs/promises";
+import * as mediaService from "../../media/services/media.service.js";
 import {
   GetUserProfileResultDTO,
   PostSummaryDTO,
@@ -12,6 +11,7 @@ import {
 } from "../dto/user-response.dto.js";
 import { DuplicateEntryError } from "../../../common/error/domain.error.js";
 import { User } from "@prisma/client";
+import { UploadMediaDTO } from "../../media/dto/media-response.dto.js";
 
 const sanitizeUser = (user: User): UserProfileDTO => {
   return {
@@ -43,51 +43,11 @@ const mapPost = (posts: userRepository.UserProfileResult["posts"]): PostSummaryD
     })),
   }));
 };
-// Helper function to clean up temporary files
-const cleanUpTempFile = async (filePath: string): Promise<void> => {
-  try {
-    await fs.access(filePath);
-    await fs.unlink(filePath);
-  } catch (error) {
-    logger.error(`[USER SERVICE] Failed to delete temporary file: ${filePath}. Error: ${error}`);
-  }
-};
-
-// Helper function to upload profile picture to Cloudinary
-const uploadProfilePicture = async (
-  file: Express.Multer.File,
-  oldPublicId?: string | null,
-): Promise<{ profilePic: string; profilePublicId: string }> => {
-  let uploadResult;
-  try {
-    uploadResult = await cloudinary.uploader.upload(file.path, {
-      folder: "profile-pictures",
-      resource_type: "image",
-      use_filename: false,
-      unique_filename: true,
-      overwrite: true,
-    });
-  } finally {
-    await cleanUpTempFile(file.path);
-  }
-
-  if (oldPublicId) {
-    try {
-      await cloudinary.uploader.destroy(oldPublicId);
-    } catch (error) {
-      logger.warn(`[USER SERVICE] Failed to delete old profile picture ${oldPublicId}`);
-    }
-  }
-
-  return {
-    profilePic: uploadResult.secure_url,
-    profilePublicId: uploadResult.public_id,
-  };
-};
 
 export const updateProfile = async (
   userId: string,
   data: UpdateUserDataDTO,
+  uploadMedia?: UploadMediaDTO,
 ): Promise<UserProfileDTO> => {
   const user = await userRepository.findUserById(userId);
   if (!user) throw new AppError("User not found", 404);
@@ -99,13 +59,13 @@ export const updateProfile = async (
   if (data.bio !== undefined) updateData.bio = data.bio;
   if (data.isPrivate !== undefined) updateData.isPrivate = data.isPrivate;
 
-  if (data.profilePic) {
-    const { profilePic, profilePublicId } = await uploadProfilePicture(
-      data.profilePic,
-      user.profilePublicId,
-    );
-    updateData.profilePic = profilePic;
-    updateData.profilePublicId = profilePublicId;
+  if (uploadMedia) {
+    updateData.profilePic = uploadMedia.url;
+    updateData.profilePublicId = uploadMedia.publicId;
+
+    if (user.profilePublicId) {
+      mediaService.deleteAssets(user.profilePublicId);
+    }
   }
 
   if (Object.keys(updateData).length === 0) {

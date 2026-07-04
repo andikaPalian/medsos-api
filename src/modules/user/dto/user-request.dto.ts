@@ -1,6 +1,5 @@
 export interface UpdateUserDataDTO {
   username?: string;
-  profilePic?: Express.Multer.File;
   fullName?: string | null;
   bio?: string | null;
   isPrivate?: boolean;
