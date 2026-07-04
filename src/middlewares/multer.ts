@@ -3,7 +3,7 @@ import { Request } from "express";
 import { logger } from "../common/utils/logger.js";
 import { AppError } from "../common/error/errorHandler.js";
 
-const UPLOAD_CONFIG = {
+export const UPLOAD_CONFIG = {
   IMAGE: {
     MAX_SIZE: 1024 * 1024 * 5, // 5MB
     MIME_TYPES: new Set(["image/png", "image/jpeg"]),
