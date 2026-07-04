@@ -11,11 +11,12 @@ import {
   hashToken,
 } from "../../../common/utils/generateOtp.js";
 import {
+  BaseTokenPayload,
   generateAccessToken,
   generateRefreshToken,
   generateRegisterToken,
   getRefreshTokenExpiry,
-  TokenPayload,
+  RefreshTokenPayload,
   verifyToken,
   verifyTokenIgnoreExpiry,
 } from "../../../common/utils/jwt.js";
@@ -50,7 +51,7 @@ export interface GoogleProfile {
   photos?: Array<{ value: string }>;
 }
 
-interface OAuthRegisterPayload extends TokenPayload {
+interface OAuthRegisterPayload extends BaseTokenPayload {
   email: string;
   provider: string;
   providerAccountId: string;
@@ -270,7 +271,7 @@ export const refreshSession = async (
   oldRefreshToken: string,
   context?: SecurityContext,
 ): Promise<TokenResponseDTO> => {
-  let decoded: TokenPayload;
+  let decoded: RefreshTokenPayload;
   try {
     decoded = await verifyToken(oldRefreshToken, env.JWT_SECRET_REFRESH);
   } catch (error) {
@@ -444,7 +445,7 @@ export const completeOAuthRegistration = async (
 
   let decoded: OAuthRegisterPayload;
   try {
-    decoded = (await verifyToken(registerToken)) as OAuthRegisterPayload;
+    decoded = await verifyToken<OAuthRegisterPayload>(registerToken);
     if (decoded.type !== "oauth_registration") throw new Error();
   } catch (error) {
     throw new AppError("Session expired or invalid.", 400);
