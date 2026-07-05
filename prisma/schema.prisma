@@ -47,6 +47,7 @@ model User {
   rooms              RoomParticipant[]
   savedPosts         SavedPost[]
   reports            Report[]          @relation("reports")
+  receivedReports    Report[]          @relation("reportedUser")
   blocks             Block[]           @relation("blocks")
   blockedBy          Block[]           @relation("blockedBy")
   storyViews         StoryViewer[]
@@ -66,6 +67,7 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([expiresAt])
 }
 
 model Account {
@@ -83,9 +85,9 @@ model Account {
 
 model CloseFriends {
   id        String   @id @default(uuid())
-  user      User     @relation("closeFriendOwner", fields: [userId], references: [id])
+  user      User     @relation("closeFriendOwner", fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  friend    User     @relation("closeFriendsList", fields: [friendId], references: [id])
+  friend    User     @relation("closeFriendsList", fields: [friendId], references: [id], onDelete: Cascade)
   friendId  String
   createdAt DateTime @default(now())
 
@@ -139,6 +141,8 @@ model Story {
   expiresAt      DateTime
 
   notification Notification[]
+
+  @@index([expiresAt])
 }
 
 model StoryViewer {
@@ -191,7 +195,8 @@ model Follow {
   following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
-  @@index([followingId])
+  @@index([followingId, status, createdAt(sort: Desc)])
+  @@index([followerId, status, createdAt(sort: Desc)])
 }
 
 enum FollowStatus {
@@ -243,8 +248,11 @@ model RoomParticipant {
   id     String @id @default(uuid())
   roomId String
   userId String
-  room   Room   @relation(fields: [roomId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
 }
 
 model Message {
@@ -322,8 +330,9 @@ model Report {
   reason     String
   createdAt  DateTime @default(now())
 
-  reporter User  @relation("reports", fields: [reporterId], references: [id])
-  post     Post? @relation("postReports", fields: [postId], references: [id])
+  reporter     User  @relation("reports", fields: [reporterId], references: [id])
+  post         Post? @relation("postReports", fields: [postId], references: [id], onDelete: Cascade)
+  reportedUser User? @relation("reportedUser", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Block {
@@ -332,8 +341,8 @@ model Block {
   blockedId String
   createdAt DateTime @default(now())
 
-  blocker User @relation("blocks", fields: [blockerId], references: [id])
-  blocked User @relation("blockedBy", fields: [blockedId], references: [id])
+  blocker User @relation("blocks", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("blockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
 }
