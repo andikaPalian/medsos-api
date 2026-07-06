@@ -39,6 +39,15 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAMES: z.string().min(1, "CLOUDINARY_CLOUD_NAMES is required"),
   CLOUDINARY_API_KEYS: z.string().min(1, "CLOUDINARY_API_KEYS is required"),
   CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
+
+  MESSAGE_ENCRYPTION_KEY: z
+    .string()
+    .length(64, "MESSAGE_ENCRYPTION_KEY must be 64 characters hex string ")
+    .regex(/^[0-9a-fA-F]+$/, "MESSAGE_ENCRYPTION_KEY must be a valid hexadecimal"),
+  FILE_ENCRYPTION_KEY: z
+    .string()
+    .length(64, "FILE_ENCRYPTION_KEY must be 64 characters hex string")
+    .regex(/^[0-9a-fA-F]+$/, "FILE_ENCRYPTION_KEY must be a valid hexadecimal"),
 });
 
 // Synchronus Parsing
