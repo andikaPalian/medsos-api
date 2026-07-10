@@ -12,9 +12,9 @@ interface FileEncryptionResult {
   encryptedBuffer: Buffer;
 }
 
-export class FileEncryptionError extends Error {
+export class FileDecryptionError extends Error {
   constructor(
-    message = "Failed to encrypt file: data may be corrupted, tampered with, or encrypted with a different key.",
+    message = "Failed to decrypt file: data may be corrupted, tampered with, or encrypted with a different key.",
   ) {
     super(message);
     this.name = "FileEncryptionError";
@@ -48,6 +48,6 @@ export const decryptFile = (encryptedFile: Buffer, iv: string, fileAuthTag: stri
   } catch (error) {
     const err = error as Error;
     logger.error(`[CRYPTO] Failed to decrypt file: ${err.message}`);
-    throw new FileEncryptionError();
+    throw new FileDecryptionError();
   }
 };
