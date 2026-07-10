@@ -2,6 +2,7 @@ import { Response } from "express";
 import { z } from "zod";
 import * as messageService from "../services/messages.service.js";
 import {
+  attachmentIdParamSchema,
   GetMessagesParams,
   GetMessagesQuery,
   messageIdParamSchema,
@@ -44,9 +45,11 @@ export const getMessages = authHandler(
     const { roomId } = req.params;
     const { limit, nextCursor } = req.query as unknown as GetMessagesQuery;
 
-    const result = await messageService.getMessageByRoom(userId, roomId, {
-      limit: limit,
-      nextCursor: nextCursor || null,
+    const result = await messageService.getMessageByRoom({
+      userId,
+      roomId,
+      cursor: nextCursor,
+      limit,
     });
 
     res.status(200).json({
@@ -112,5 +115,28 @@ export const recallMessageForEveryone = authHandler(
       message: "Message recalled successfully",
       data: { messageId },
     });
+  },
+);
+
+export const downloadAttachment = authHandler(
+  async (
+    req: AuthenticatedRequest<z.infer<typeof attachmentIdParamSchema>["params"]>,
+    res: Response,
+  ): Promise<void> => {
+    const userId = req.user.id;
+    const { attachmentId } = req.params;
+
+    const { buffer, fileName, mimeType } = await messageService.getDecryptedAttachment(
+      userId,
+      attachmentId,
+    );
+
+    res.set({
+      "Content-Type": mimeType,
+      "Content-Disposition": `inline; fileName="${encodeURIComponent(fileName)}"`,
+      "Content-Length": buffer.length.toString(),
+    });
+
+    res.send(buffer);
   },
 );

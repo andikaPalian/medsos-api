@@ -56,5 +56,11 @@ export const messageIdParamSchema = z.object({
   }),
 });
 
+export const attachmentIdParamSchema = z.object({
+  params: z.object({
+    attachmentId: z.string().trim().uuid({ message: "Attachment ID format is not valid." }),
+  }),
+});
+
 export type GetMessagesParams = z.infer<typeof getMessageSchema>["params"];
 export type GetMessagesQuery = z.infer<typeof getMessageSchema>["query"];
