@@ -3,6 +3,7 @@ import { logger } from "../../../common/utils/logger.js";
 import { UpdateUserDataDTO, UserUpdateData } from "../dto/user-request.dto.js";
 import * as userRepository from "../repositories/user.repository.js";
 import * as followRepository from "../../follow/repositories/follow.repository.js";
+import * as blockRepository from "../../block/repositories/block.repository.js";
 import * as mediaService from "../../media/services/media.service.js";
 import {
   GetUserProfileResultDTO,
@@ -95,6 +96,14 @@ export const getUserProfile = async (
 
   let isFollowing = false;
   if (!isOwnProfile) {
+    const isBlocked = await blockRepository.isBlockedEitherWay(requesterId, targetUserId);
+    if (isBlocked) {
+      logger.warn(
+        `[USER SERVICE] Blocked profile attempt between ${requesterId} and ${targetUserId}`,
+      );
+      throw new AppError("You cannot view this profile", 403);
+    }
+
     const followRecord = await followRepository.findFollow(requesterId, targetUserId);
     isFollowing = followRecord?.status === "ACCEPTED";
   }
