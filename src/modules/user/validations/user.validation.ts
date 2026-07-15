@@ -22,3 +22,7 @@ export const getProfileParams = z.object({
     targetUserId: z.string().trim().uuid("Target User ID format is invalid"),
   }),
 });
+
+export type UpdateUserBody = z.infer<typeof updateUserSchema>["body"];
+
+export type GetProfileParams = z.infer<typeof getProfileParams>["params"];

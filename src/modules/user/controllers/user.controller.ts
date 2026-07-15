@@ -1,14 +1,13 @@
 import { Response } from "express";
-import { z } from "zod";
 import * as userService from "../services/user.service.js";
 import * as mediaService from "../../media/services/media.service.js";
-import { getProfileParams, updateUserSchema } from "../validations/user.validation.js";
+import { GetProfileParams, UpdateUserBody } from "../validations/user.validation.js";
 import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
 import { authHandler } from "../../../common/utils/authHandler.js";
 
 export const updateProfile = authHandler(
   async (
-    req: AuthenticatedRequest<any, any, z.infer<typeof updateUserSchema>["body"]>,
+    req: AuthenticatedRequest<any, any, UpdateUserBody, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
@@ -31,7 +30,7 @@ export const updateProfile = authHandler(
 
 export const getProfile = authHandler(
   async (
-    req: AuthenticatedRequest<z.infer<typeof getProfileParams>["params"], any, any, any>,
+    req: AuthenticatedRequest<GetProfileParams, any, any, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
