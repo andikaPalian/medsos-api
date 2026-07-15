@@ -1,38 +1,27 @@
 import { z } from "zod";
+import { targetUserIdParamSchema } from "../../../common/validation/shared.validation.js";
+import { cursorPaginationQuerySchema } from "../../../common/validation/pagination.validation.js";
 
 export const listFollowRelationsSchema = z.object({
-  params: z.object({
-    targetUserId: z.string().trim().uuid({ message: "Target User ID format is not valid." }),
+  params: targetUserIdParamSchema,
+  query: cursorPaginationQuerySchema.extend({
+    direction: z.enum(["FOLLOWERS", "FOLLOWING"]).default("FOLLOWERS"),
   }),
-  query: z.object({
-    direction: z.enum(["FOLLOWERS", "FOLLOWING"]).default("FOLLOWING"),
-    cursor: z.string().trim().uuid({ message: "Cursor must be a valid UUID." }),
-    limit: z.coerce
-      .number()
-      .positive("Limit must be a positive number")
-      .max(100, "Max limit is 100")
-      .default(30),
-  }),
+});
+
+export const listFollowRequestSchema = z.object({
+  params: targetUserIdParamSchema,
+  query: cursorPaginationQuerySchema,
+});
+
+export const followActionSchema = z.object({
+  params: targetUserIdParamSchema,
 });
 
 export type ListFollowRelationsParams = z.infer<typeof listFollowRelationsSchema>["params"];
 export type ListFollowRelationsQuery = z.infer<typeof listFollowRelationsSchema>["query"];
 
-export const followRequestSchema = z.object({
-  params: z.object({
-    targetUserId: z.string().trim().uuid({ message: "Target User ID format is not valid." }),
-  }),
-  query: z.object({
-    cursor: z.string().trim().uuid({ message: "Cursor must be valid UUID" }),
-    limit: z.coerce
-      .number()
-      .positive("Limit must be a positive number")
-      .max(100, "Max limit is 100")
-      .default(30),
-  }),
-});
+export type ListFollowRequestParams = z.infer<typeof listFollowRequestSchema>["params"];
+export type ListFollowRequestQuery = z.infer<typeof listFollowRequestSchema>["query"];
 
-export type ListFollowRequestParams = z.infer<typeof followRequestSchema>["params"];
-export type ListFollowRequestQuery = z.infer<typeof followRequestSchema>["query"];
-
-export type FollowParams = z.infer<typeof followRequestSchema>["params"];
+export type FollowActionParams = z.infer<typeof followActionSchema>["params"];

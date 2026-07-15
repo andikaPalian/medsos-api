@@ -3,7 +3,7 @@ import * as followService from "../services/follow.service.js";
 import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
 import { authHandler } from "../../../common/utils/authHandler.js";
 import {
-  FollowParams,
+  FollowActionParams,
   ListFollowRelationsParams,
   ListFollowRelationsQuery,
   ListFollowRequestParams,
@@ -12,17 +12,23 @@ import {
 
 export const getFollowRelations = authHandler(
   async (
-    req: AuthenticatedRequest<ListFollowRelationsParams, any, any, ListFollowRelationsQuery>,
+    req: AuthenticatedRequest<
+      any,
+      any,
+      any,
+      any,
+      { params: ListFollowRelationsParams; query: ListFollowRelationsQuery }
+    >,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
-    const { targetUserId } = req.params;
-    const { direction, cursor, limit } = req.query;
+    const { targetUserId } = req.validated.params;
+    const { direction, cursor, limit } = req.validated.query;
 
     const result = await followService.listFollowRelations(direction, {
       requesterId: userId,
       targetUserId,
-      cursor,
+      cursor: cursor ?? null,
       limit,
     });
 
@@ -35,17 +41,23 @@ export const getFollowRelations = authHandler(
 
 export const getFollowRequests = authHandler(
   async (
-    req: AuthenticatedRequest<ListFollowRequestParams, any, any, ListFollowRequestQuery>,
+    req: AuthenticatedRequest<
+      any,
+      any,
+      any,
+      any,
+      { params: ListFollowRequestParams; query: ListFollowRequestQuery }
+    >,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
-    const { targetUserId } = req.params;
-    const { cursor, limit } = req.query;
+    const { targetUserId } = req.validated.params;
+    const { cursor, limit } = req.validated.query;
 
     const result = await followService.listFollowRequests({
       requesterId: userId,
       targetUserId,
-      cursor,
+      cursor: cursor ?? null,
       limit,
     });
 
@@ -57,9 +69,12 @@ export const getFollowRequests = authHandler(
 );
 
 export const followUser = authHandler(
-  async (req: AuthenticatedRequest<FollowParams, any, any, any>, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<any, any, any, any, { params: FollowActionParams }>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
-    const { targetUserId } = req.params;
+    const { targetUserId } = req.validated.params;
 
     await followService.followUser(userId, targetUserId);
 
@@ -71,9 +86,12 @@ export const followUser = authHandler(
 );
 
 export const confirmFollowRequest = authHandler(
-  async (req: AuthenticatedRequest<FollowParams, any, any, any>, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<any, any, any, any, { params: FollowActionParams }>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
-    const { targetUserId } = req.params;
+    const { targetUserId } = req.validated.params;
 
     await followService.confirmFollowRequest(userId, targetUserId);
 
@@ -85,9 +103,12 @@ export const confirmFollowRequest = authHandler(
 );
 
 export const rejectFollowRequest = authHandler(
-  async (req: AuthenticatedRequest<FollowParams, any, any, any>, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<any, any, any, any, { params: FollowActionParams }>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
-    const { targetUserId } = req.params;
+    const { targetUserId } = req.validated.params;
 
     await followService.rejectFollowRequest(userId, targetUserId);
 
