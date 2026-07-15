@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cursorPaginationQuerySchema } from "../../../common/validation/pagination.validation.js";
 
 // Validation schema for create or send message
 export const sendMessageSchema = z.object({
@@ -25,14 +26,7 @@ export const getMessageSchema = z.object({
   params: z.object({
     roomId: z.string().trim().min(1, "Room ID is required."),
   }),
-  query: z.object({
-    limit: z.coerce
-      .number()
-      .positive("Limit must be a positive number")
-      .max(100, "Max limit is 100")
-      .default(30),
-    nextCursor: z.string().trim().uuid({ message: "Cursor must be a valid UUID." }),
-  }),
+  query: cursorPaginationQuerySchema,
 });
 
 // Validation schema for update/edit message
@@ -62,5 +56,14 @@ export const attachmentIdParamSchema = z.object({
   }),
 });
 
+export type SendMessageBody = z.infer<typeof sendMessageSchema>["body"];
+
 export type GetMessagesParams = z.infer<typeof getMessageSchema>["params"];
 export type GetMessagesQuery = z.infer<typeof getMessageSchema>["query"];
+
+export type UpdateMessageParams = z.infer<typeof updateMessageSchema>["params"];
+export type UpdateMessageBody = z.infer<typeof updateMessageSchema>["body"];
+
+export type MessageIdParam = z.infer<typeof messageIdParamSchema>["params"];
+
+export type AttachmentIdParam = z.infer<typeof attachmentIdParamSchema>["params"];

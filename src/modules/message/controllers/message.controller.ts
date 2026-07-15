@@ -1,20 +1,20 @@
 import { Response } from "express";
-import { z } from "zod";
 import * as messageService from "../services/messages.service.js";
 import {
-  attachmentIdParamSchema,
+  AttachmentIdParam,
   GetMessagesParams,
   GetMessagesQuery,
-  messageIdParamSchema,
-  sendMessageSchema,
-  updateMessageSchema,
+  MessageIdParam,
+  SendMessageBody,
+  UpdateMessageBody,
+  UpdateMessageParams,
 } from "../validators/message.validation.js";
 import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
 import { authHandler } from "../../../common/utils/authHandler.js";
 
 export const sendMessage = authHandler(
   async (
-    req: AuthenticatedRequest<any, any, z.infer<typeof sendMessageSchema>["body"]>,
+    req: AuthenticatedRequest<any, any, SendMessageBody, any, any>,
     res: Response,
   ): Promise<void> => {
     const senderId = req.user.id;
@@ -38,17 +38,17 @@ export const sendMessage = authHandler(
 
 export const getMessages = authHandler(
   async (
-    req: AuthenticatedRequest<GetMessagesParams, any, any, any>,
+    req: AuthenticatedRequest<GetMessagesParams, any, any, any, GetMessagesQuery>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
     const { roomId } = req.params;
-    const { limit, nextCursor } = req.query as unknown as GetMessagesQuery;
+    const { limit, cursor } = req.validatedQuery;
 
     const result = await messageService.getMessageByRoom({
       userId,
       roomId,
-      cursor: nextCursor,
+      cursor: cursor ?? null,
       limit,
     });
 
@@ -61,11 +61,7 @@ export const getMessages = authHandler(
 
 export const updateMessage = authHandler(
   async (
-    req: AuthenticatedRequest<
-      z.infer<typeof updateMessageSchema>["params"],
-      any,
-      z.infer<typeof updateMessageSchema>["body"]
-    >,
+    req: AuthenticatedRequest<UpdateMessageParams, any, UpdateMessageBody, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
@@ -84,7 +80,7 @@ export const updateMessage = authHandler(
 
 export const purgeMessageForMe = authHandler(
   async (
-    req: AuthenticatedRequest<z.infer<typeof messageIdParamSchema>["params"]>,
+    req: AuthenticatedRequest<MessageIdParam, any, any, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
@@ -102,7 +98,7 @@ export const purgeMessageForMe = authHandler(
 
 export const recallMessageForEveryone = authHandler(
   async (
-    req: AuthenticatedRequest<z.infer<typeof messageIdParamSchema>["params"]>,
+    req: AuthenticatedRequest<MessageIdParam, any, any, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
@@ -120,7 +116,7 @@ export const recallMessageForEveryone = authHandler(
 
 export const downloadAttachment = authHandler(
   async (
-    req: AuthenticatedRequest<z.infer<typeof attachmentIdParamSchema>["params"]>,
+    req: AuthenticatedRequest<AttachmentIdParam, any, any, any, any>,
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
