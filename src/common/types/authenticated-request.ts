@@ -10,8 +10,8 @@ export interface AuthenticatedRequest<
   ResBody = any,
   ReqBody = any,
   ReqQuery = any,
-  VData = any,
+  ValidatedQuery = any,
 > extends Request<P, ResBody, ReqBody, ReqQuery> {
   user: UserSession;
-  validated: VData;
+  validatedQuery: ValidatedQuery;
 }

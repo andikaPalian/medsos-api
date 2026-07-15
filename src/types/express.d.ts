@@ -4,7 +4,8 @@ import { UserSession } from "../common/types/authenticated-request.ts";
 declare global {
   namespace Express {
     interface Request {
-      user: UserSession;
+      user?: UserSession;
+      validatedQuery?: unknown;
     }
   }
 }

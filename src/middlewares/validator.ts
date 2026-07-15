@@ -2,14 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { ZodType } from "zod";
 import { ValidationError } from "../common/error/validationError.js";
 
-interface ValidationRequestPayload {
-  body?: string;
-  query?: string;
-  params?: string;
-}
-
 export const validate = <T extends ZodType>(schema: T) => {
-  return async (req: Request, _res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       const result = await schema.safeParseAsync({
         body: req.body,
@@ -18,15 +12,22 @@ export const validate = <T extends ZodType>(schema: T) => {
       });
 
       if (!result.success) {
-        return next(new ValidationError(result.error));
+        next(new ValidationError(result.error));
+        return;
       }
 
-      const validatedData = result.data as ValidationRequestPayload;
-      const { body, query, params } = validatedData;
+      const { body, query, params } = result.data as {
+        body?: unknown;
+        query?: unknown;
+        params?: unknown;
+      };
 
       if (body !== undefined) req.body = body;
-      if (query !== undefined) req.query = query as unknown as typeof req.query;
-      if (params !== undefined) req.params = params as unknown as typeof req.params;
+      if (params !== undefined) req.params = params as typeof req.params;
+
+      if (query !== undefined) {
+        (req as Request & { validatedQuery: unknown }).validatedQuery = query;
+      }
 
       next();
     } catch (error) {
