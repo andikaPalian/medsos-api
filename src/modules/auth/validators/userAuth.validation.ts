@@ -120,3 +120,17 @@ export const logoutSchema = z.object({
     refreshToken: z.string().trim().min(1, "Refresh Token is not found in cookies"),
   }),
 });
+
+export type RegisterBody = z.infer<typeof registerSchema>["body"];
+
+export type EmailVerificationBody = z.infer<typeof emailVerificationSchema>["body"];
+
+export type ResendVerificationBody = z.infer<typeof resendVerificationSchema>["body"];
+
+export type LoginBody = z.infer<typeof loginSchema>["body"];
+
+export type ForgotPasswordBody = z.infer<typeof forgotPasswordSchema>["body"];
+
+export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>["body"];
+
+export type CompleteOAuthRegistrationBody = z.infer<typeof completeOAuthRegistrationSchema>["body"];

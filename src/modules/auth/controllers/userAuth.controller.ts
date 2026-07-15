@@ -1,15 +1,14 @@
 import { Request, Response } from "express";
-import { z } from "zod";
 import * as userAuthService from "../services/userAuth.service.js";
 import { COOKIES_OPTIONS, TOKEN_EXPIRY } from "../../../config/cookie.js";
 import {
-  completeOAuthRegistrationSchema,
-  emailVerificationSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  registerSchema,
-  resendVerificationSchema,
-  resetPasswordSchema,
+  CompleteOAuthRegistrationBody,
+  EmailVerificationBody,
+  ForgotPasswordBody,
+  LoginBody,
+  RegisterBody,
+  ResendVerificationBody,
+  ResetPasswordBody,
 } from "../validators/userAuth.validation.js";
 import { extractSecurityContext } from "../../../common/utils/device.js";
 
@@ -28,7 +27,7 @@ const setAuthCookie = (res: Response, accessToken: string, refreshToken: string)
 
 // Controller for user registration
 export const registerController = async (
-  req: Request<any, any, z.infer<typeof registerSchema>["body"]>,
+  req: Request<any, any, RegisterBody>,
   res: Response,
 ): Promise<void> => {
   const { username, email, password } = req.body;
@@ -43,7 +42,7 @@ export const registerController = async (
 
 // Controller for email verification
 export const verifyEmailController = async (
-  req: Request<any, any, z.infer<typeof emailVerificationSchema>["body"]>,
+  req: Request<any, any, EmailVerificationBody>,
   res: Response,
 ): Promise<void> => {
   const { email, otp } = req.body;
@@ -58,7 +57,7 @@ export const verifyEmailController = async (
 
 // Controller for resending verification email
 export const resendVerificationEmailController = async (
-  req: Request<any, any, z.infer<typeof resendVerificationSchema>["body"]>,
+  req: Request<any, any, ResendVerificationBody>,
   res: Response,
 ): Promise<void> => {
   const { email } = req.body;
@@ -73,7 +72,7 @@ export const resendVerificationEmailController = async (
 
 // Controller for user login
 export const loginController = async (
-  req: Request<any, any, z.infer<typeof loginSchema>["body"]>,
+  req: Request<any, any, LoginBody>,
   res: Response,
 ): Promise<void> => {
   const { email, password } = req.body;
@@ -96,7 +95,7 @@ export const loginController = async (
 
 // Controller for forgot password
 export const forgotPasswordController = async (
-  req: Request<any, any, z.infer<typeof forgotPasswordSchema>["body"]>,
+  req: Request<any, any, ForgotPasswordBody>,
   res: Response,
 ): Promise<void> => {
   const { email } = req.body;
@@ -111,7 +110,7 @@ export const forgotPasswordController = async (
 
 // Controller for reset password
 export const resetPasswordController = async (
-  req: Request<any, any, z.infer<typeof resetPasswordSchema>["body"]>,
+  req: Request<any, any, ResetPasswordBody>,
   res: Response,
 ): Promise<void> => {
   const { token, newPassword } = req.body;
@@ -187,7 +186,7 @@ export const googleAuthCallback = async (req: Request, res: Response): Promise<v
 
 // Controller for completing OAuth registration
 export const completeOAuthRegistrationController = async (
-  req: Request<any, any, z.infer<typeof completeOAuthRegistrationSchema>["body"]>,
+  req: Request<any, any, CompleteOAuthRegistrationBody>,
   res: Response,
 ): Promise<void> => {
   const { registerToken, username } = req.body;
