@@ -8,12 +8,14 @@ const postWithDetailsInclude = Prisma.validator<Prisma.PostInclude>()({
       id: true,
       profilePic: true,
       username: true,
+      isPrivate: true,
     },
   },
   media: {
     select: {
       id: true,
       url: true,
+      urlPublicId: true,
       type: true,
     },
   },
