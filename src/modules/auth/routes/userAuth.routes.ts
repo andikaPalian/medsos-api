@@ -1,19 +1,9 @@
 import { Router } from "express";
 import * as userAuthController from "../controllers/userAuth.controller.js";
+import * as userAuthValidator from "../validators/userAuth.validation.js";
 import passport from "../../../config/passport.js";
 import { authLimiter, emailLimiter } from "../../../middlewares/rateLimiter.js";
 import { validate } from "../../../middlewares/validator.js";
-import {
-  completeOAuthRegistrationSchema,
-  emailVerificationSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  logoutSchema,
-  refreshTokenSchema,
-  registerSchema,
-  resendVerificationSchema,
-  resetPasswordSchema,
-} from "../validators/userAuth.validation.js";
 
 export const userAuthRouter = Router();
 
@@ -21,18 +11,18 @@ export const userAuthRouter = Router();
 userAuthRouter.post(
   "/register",
   authLimiter,
-  validate(registerSchema),
+  validate(userAuthValidator.registerSchema),
   userAuthController.registerController,
 );
 userAuthRouter.post(
   "/verify-email",
-  validate(emailVerificationSchema),
+  validate(userAuthValidator.emailVerificationSchema),
   userAuthController.verifyEmailController,
 );
 userAuthRouter.post(
   "/resend-verification",
   emailLimiter,
-  validate(resendVerificationSchema),
+  validate(userAuthValidator.resendVerificationSchema),
   userAuthController.resendVerificationEmailController,
 );
 
@@ -40,15 +30,19 @@ userAuthRouter.post(
 userAuthRouter.post(
   "/login",
   authLimiter,
-  validate(loginSchema),
+  validate(userAuthValidator.loginSchema),
   userAuthController.loginController,
 );
-userAuthRouter.post("/logout", validate(logoutSchema), userAuthController.logoutController);
+userAuthRouter.post(
+  "/logout",
+  validate(userAuthValidator.logoutSchema),
+  userAuthController.logoutController,
+);
 
 // Refresh Token
 userAuthRouter.post(
   "/refresh-token",
-  validate(refreshTokenSchema),
+  validate(userAuthValidator.refreshTokenSchema),
   userAuthController.refreshTokenController,
 );
 
@@ -56,13 +50,13 @@ userAuthRouter.post(
 userAuthRouter.post(
   "/forgot-password",
   emailLimiter,
-  validate(forgotPasswordSchema),
+  validate(userAuthValidator.forgotPasswordSchema),
   userAuthController.forgotPasswordController,
 );
 userAuthRouter.post(
   "/reset-password",
   authLimiter,
-  validate(resetPasswordSchema),
+  validate(userAuthValidator.resetPasswordSchema),
   userAuthController.resetPasswordController,
 );
 
@@ -82,6 +76,6 @@ userAuthRouter.get(
 userAuthRouter.post(
   "/complete-oauth",
   authLimiter,
-  validate(completeOAuthRegistrationSchema),
+  validate(userAuthValidator.completeOAuthRegistrationSchema),
   userAuthController.completeOAuthRegistrationController,
 );
