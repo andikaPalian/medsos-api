@@ -4,10 +4,18 @@ import {
   uploadToCloudinary,
 } from "../../../common/utils/uploadToCloudinary.js";
 import { cloudinary } from "../../../config/cloudinary.js";
-import { UploadAttachmentDTO, UploadMediaDTO } from "../dto/media-response.dto.js";
+import {
+  UploadAttachmentDTO,
+  UploadMediaDTO,
+  UploadPostMediaDTO,
+} from "../dto/media-response.dto.js";
 
 export const uploadProfilePicture = async (file: Express.Multer.File): Promise<UploadMediaDTO> => {
   return await uploadToCloudinary(file, "media-social/profile-pictures");
+};
+
+export const uploadPostMedia = async (file: Express.Multer.File): Promise<UploadPostMediaDTO> => {
+  return await uploadToCloudinary(file, "media-social/posts");
 };
 
 export const uploadMessageAttachment = async (
