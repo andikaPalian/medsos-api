@@ -1,12 +1,8 @@
 import { Router } from "express";
 import * as followController from "../controllers/follow.controller.js";
+import * as followValidator from "../validation/follow.validation.js";
 import { userAuth } from "../../../middlewares/auth.middleware.js";
 import { validate } from "../../../middlewares/validator.js";
-import {
-  followActionSchema,
-  listFollowRelationsSchema,
-  listFollowRequestSchema,
-} from "../validation/follow.validation.js";
 
 export const followRouter = Router();
 
@@ -14,22 +10,26 @@ followRouter.use(userAuth);
 
 followRouter.get(
   "/:targetUserId",
-  validate(listFollowRelationsSchema),
+  validate(followValidator.listFollowRelationsSchema),
   followController.getFollowRelations,
 );
 followRouter.get(
   "/:targetUserId/requests",
-  validate(listFollowRequestSchema),
+  validate(followValidator.listFollowRequestSchema),
   followController.getFollowRequests,
 );
-followRouter.post("/:targetUserId", validate(followActionSchema), followController.followUser);
+followRouter.post(
+  "/:targetUserId",
+  validate(followValidator.followActionSchema),
+  followController.followUser,
+);
 followRouter.patch(
   "/:targetUserId/confirm",
-  validate(followActionSchema),
+  validate(followValidator.followActionSchema),
   followController.confirmFollowRequest,
 );
 followRouter.patch(
   "/:targetUserId/reject",
-  validate(followActionSchema),
+  validate(followValidator.followActionSchema),
   followController.rejectFollowRequest,
 );
