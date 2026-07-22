@@ -1,10 +1,10 @@
 import { Router } from "express";
 import * as userController from "../controllers/user.controller.js";
+import * as userValidator from "../validations/user.validation.js";
 import { userAuth } from "../../../middlewares/auth.middleware.js";
 import { UPLOAD_CONFIG, uploadImage } from "../../../middlewares/multer.js";
 import { validateFileContent } from "../../../middlewares/validateFileContent.js";
 import { validate } from "../../../middlewares/validator.js";
-import { getProfileParams, updateUserSchema } from "../validations/user.validation.js";
 
 export const userRouter = Router();
 
@@ -14,7 +14,11 @@ userRouter.patch(
   "/",
   uploadImage.single("profilePic"),
   validateFileContent(UPLOAD_CONFIG.IMAGE.MIME_TYPES),
-  validate(updateUserSchema),
+  validate(userValidator.updateUserSchema),
   userController.updateProfile,
 );
-userRouter.get("/:targetUserId", validate(getProfileParams), userController.getProfile);
+userRouter.get(
+  "/:targetUserId",
+  validate(userValidator.getProfileParams),
+  userController.getProfile,
+);
