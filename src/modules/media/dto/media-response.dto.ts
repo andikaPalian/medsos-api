@@ -3,6 +3,12 @@ export interface UploadMediaDTO {
   publicId: string;
 }
 
+export interface UploadPostMediaDTO {
+  url: string;
+  publicId: string;
+  detectedResourceType: string;
+}
+
 export interface UploadAttachmentDTO {
   url: string;
   publicId: string;
