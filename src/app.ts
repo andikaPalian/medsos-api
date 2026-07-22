@@ -11,6 +11,7 @@ import { globalLimiter } from "./middlewares/rateLimiter.js";
 import { userAuthRouter } from "./modules/auth/routes/userAuth.routes.js";
 import { userRouter } from "./modules/user/routes/user.routes.js";
 import { followRouter } from "./modules/follow/routes/follow.routes.js";
+import { postRouter } from "./modules/post/routes/post.routes.js";
 
 const API_PREFIX = "api/v1" as const;
 
@@ -64,6 +65,7 @@ export const createApp = (io: SocketServer) => {
   app.use(`${API_PREFIX}/user`, userRouter);
   app.use(`${API_PREFIX}/message`, messageRouter);
   app.use(`${API_PREFIX}/follow`, followRouter);
+  app.use(`${API_PREFIX}/post`, postRouter);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
