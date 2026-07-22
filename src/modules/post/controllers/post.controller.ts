@@ -3,7 +3,14 @@ import * as postService from "../services/post.service.js";
 import * as mediaService from "../../media/services/media.service.js";
 import { authHandler } from "../../../common/utils/authHandler.js";
 import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
-import { CreatePostBody } from "../validations/post.validator.js";
+import {
+  CreatePostBody,
+  DeletePostParams,
+  GetFeedQuery,
+  GetPostByIdParams,
+  UpdatePostBody,
+  UpdatePostParams,
+} from "../validations/post.validator.js";
 import { CreateMediaInput } from "../dto/post-request.dto.js";
 
 const deriveMediaType = (mimeType: string): "IMAGE" | "VIDEO" => {
@@ -47,7 +54,10 @@ export const createPost = authHandler(
 );
 
 export const updatePost = authHandler(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<UpdatePostParams, any, UpdatePostBody, any, any>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
     const { postId } = req.params;
     const { caption, tags } = req.body;
@@ -71,7 +81,10 @@ export const updatePost = authHandler(
 );
 
 export const deletePost = authHandler(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<DeletePostParams, any, any, any, any>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
     const { postId } = req.params;
 
@@ -86,7 +99,10 @@ export const deletePost = authHandler(
 );
 
 export const getPostById = authHandler(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<GetPostByIdParams, any, any, any, any>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
     const { postId } = req.params;
 
@@ -100,7 +116,10 @@ export const getPostById = authHandler(
 );
 
 export const getFeed = authHandler(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (
+    req: AuthenticatedRequest<any, any, any, any, GetFeedQuery>,
+    res: Response,
+  ): Promise<void> => {
     const userId = req.user.id;
     const { limit, cursor } = req.validatedQuery;
 
