@@ -28,6 +28,18 @@ export const getFeedSchema = z.object({
   query: cursorPaginationQuerySchema,
 });
 
+export const savePostSchema = z.object({
+  params: postIdParamSchema,
+});
+
+export const unsavedPostSchema = z.object({
+  params: postIdParamSchema,
+});
+
+export const getSavedPostsSchema = z.object({
+  query: cursorPaginationQuerySchema,
+});
+
 export type CreatePostBody = z.infer<typeof createPostSchema>["body"];
 
 export type UpdatePostParams = z.infer<typeof updatePostSchema>["params"];
@@ -38,3 +50,9 @@ export type DeletePostParams = z.infer<typeof deletePostSchema>["params"];
 export type GetPostByIdParams = z.infer<typeof getPostByIdSchema>["params"];
 
 export type GetFeedQuery = z.infer<typeof getFeedSchema>["query"];
+
+export type SavePostParams = z.infer<typeof savePostSchema>["params"];
+
+export type UnsavedPostParams = z.infer<typeof unsavedPostSchema>["params"];
+
+export type GetSavedPostsQuery = z.infer<typeof getSavedPostsSchema>["query"];

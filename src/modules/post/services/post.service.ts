@@ -3,10 +3,16 @@ import * as followRepository from "../../follow/repositories/follow.repository.j
 import * as mediaService from "../../media/services/media.service.js";
 import * as likeRepository from "../../like/repositories/like.repository.js";
 import { AppError } from "../../../common/error/errorHandler.js";
-import { CreatePostInput, GetFeedDTO, UpdatePostRequestDTO } from "../dto/post-request.dto.js";
+import {
+  CreatePostInput,
+  GetFeedDTO,
+  GetSavedPostsDTO,
+  UpdatePostRequestDTO,
+} from "../dto/post-request.dto.js";
 import { PaginatedFeedDTO, PostResponseDTO } from "../dto/post-response.dto.js";
 import { logger } from "../../../common/utils/logger.js";
 import { paginateCursor } from "../../../common/utils/pagination.js";
+import { DuplicateEntryError } from "../../../common/error/domain.error.js";
 
 const mapPost = (
   post: postRepository.PostWithDetails,
@@ -45,7 +51,7 @@ const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 const FEED_FOLLOWING_FETCH_LIMIT = 10000;
 
-const getViewablePost = async (
+export const getViewablePost = async (
   viewerId: string,
   postId: string,
 ): Promise<postRepository.PostWithDetails> => {
@@ -160,6 +166,49 @@ export const getFeed = async ({ userId, limit, cursor }: GetFeedDTO): Promise<Pa
     cursor,
   });
 
+  const { items, nextCursor, hasNextPage } = paginateCursor(rawPost, take, (p) => p.id);
+  const data = await enrichPosts(userId, items);
+
+  return {
+    data,
+    nextCursor,
+    hasNextPage,
+  };
+};
+
+export const savePost = async (userId: string, postId: string): Promise<void> => {
+  const post = await postRepository.findPostById(postId);
+  if (!post) throw new AppError("Post not found", 404);
+
+  await getViewablePost(userId, postId);
+
+  try {
+    await postRepository.addSavedPost(userId, postId);
+  } catch (error) {
+    if (error instanceof DuplicateEntryError) return;
+    throw error;
+  }
+
+  logger.info(`[POST SERVICE] Post saved: ${postId} by ${userId}`);
+};
+
+export const unsavedPost = async (userId: string, postId: string): Promise<void> => {
+  const saved = await postRepository.findSavedPost(userId, postId);
+  if (!saved) return;
+
+  await postRepository.removeSavedPost(userId, postId);
+
+  logger.info(`[POST SERVICE] Post unsaved: ${postId} by ${userId}`);
+};
+
+export const getSavedPosts = async ({
+  userId,
+  limit,
+  cursor,
+}: GetSavedPostsDTO): Promise<PaginatedFeedDTO> => {
+  const take = Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
+
+  const rawPost = await postRepository.findSavedPostsList({ userId, take: take + 1, cursor });
   const { items, nextCursor, hasNextPage } = paginateCursor(rawPost, take, (p) => p.id);
   const data = await enrichPosts(userId, items);
 

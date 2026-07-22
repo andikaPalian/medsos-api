@@ -8,6 +8,8 @@ import {
   DeletePostParams,
   GetFeedQuery,
   GetPostByIdParams,
+  SavePostParams,
+  UnsavedPostParams,
   UpdatePostBody,
   UpdatePostParams,
 } from "../validations/post.validator.js";
@@ -128,6 +130,57 @@ export const getFeed = authHandler(
     res.status(200).json({
       success: true,
       data: feed,
+    });
+  },
+);
+
+export const savePost = authHandler(
+  async (
+    req: AuthenticatedRequest<SavePostParams, any, any, any, any>,
+    res: Response,
+  ): Promise<void> => {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await postService.savePost(userId, postId);
+
+    res.status(200).json({
+      success: true,
+      message: "Post saved successfully",
+    });
+  },
+);
+
+export const unsavedPost = authHandler(
+  async (
+    req: AuthenticatedRequest<UnsavedPostParams, any, any, any, any>,
+    res: Response,
+  ): Promise<void> => {
+    const userId = req.user.id;
+    const { postId } = req.params;
+
+    await postService.unsavedPost(userId, postId);
+
+    res.status(200).json({
+      success: true,
+      message: "Post unsaved successfully",
+    });
+  },
+);
+
+export const getSavedPosts = authHandler(
+  async (
+    req: AuthenticatedRequest<any, any, any, any, GetFeedQuery>,
+    res: Response,
+  ): Promise<void> => {
+    const userId = req.user.id;
+    const { limit, cursor } = req.validatedQuery;
+
+    const savedPosts = await postService.getSavedPosts({ userId, limit, cursor: cursor ?? null });
+
+    res.status(200).json({
+      success: true,
+      data: savedPosts,
     });
   },
 );

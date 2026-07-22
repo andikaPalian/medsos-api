@@ -29,3 +29,9 @@ export interface GetFeedDTO {
   limit: number;
   cursor: string | null;
 }
+
+export interface GetSavedPostsDTO {
+  userId: string;
+  limit: number;
+  cursor: string | null;
+}

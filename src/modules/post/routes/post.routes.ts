@@ -35,3 +35,10 @@ postRouter.patch(
 postRouter.delete("/:postId", validate(postValidator.deletePostSchema), postController.deletePost);
 postRouter.get("/:postId", validate(postValidator.getPostByIdSchema), postController.getPostById);
 postRouter.get("/", validate(postValidator.getFeedSchema), postController.getFeed);
+postRouter.post("/:postId/save", validate(postValidator.savePostSchema), postController.savePost);
+postRouter.delete(
+  "/:postId/save",
+  validate(postValidator.unsavedPostSchema),
+  postController.unsavedPost,
+);
+postRouter.get("/saved", validate(postValidator.getSavedPostsSchema), postController.getSavedPosts);
