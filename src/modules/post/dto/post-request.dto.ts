@@ -1,4 +1,4 @@
-interface CreateMediaInput {
+export interface CreateMediaInput {
   url: string;
   urlPublicId: string;
   type: "IMAGE" | "VIDEO";

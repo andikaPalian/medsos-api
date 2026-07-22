@@ -113,7 +113,7 @@ export const updatePost = async ({
     });
   }
 
-  // const updatedPost = await postRepository.findPostById(postId);
+  const updatedPost = await postRepository.findPostById(postId);
 
   logger.info(`[POST SERVICE] Post updated: ${postId} by ${userId}`);
 
@@ -122,7 +122,7 @@ export const updatePost = async ({
     postRepository.findSavedPostsIds(userId, [postId]),
   ]);
 
-  return mapPost(post, likedSet, savedSet);
+  return mapPost(updatedPost!, likedSet, savedSet);
 };
 
 export const deletePost = async (userId: string, postId: string): Promise<void> => {
@@ -141,7 +141,7 @@ export const deletePost = async (userId: string, postId: string): Promise<void> 
     }
   });
 
-  logger.info(`[POST SERVICE] User ${userId}`);
+  logger.info(`[POST SERVICE] Post deleted: ${postId} by ${userId}`);
 };
 
 export const getFeed = async ({ userId, limit, cursor }: GetFeedDTO): Promise<PaginatedFeedDTO> => {
