@@ -47,6 +47,27 @@ const videoFileFilter = (
   }
 };
 
+const combinedFileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  callback: FileFilterCallback,
+): void => {
+  const isValidImage = UPLOAD_CONFIG.IMAGE.MIME_TYPES.has(file.mimetype);
+  const isValidVideo = UPLOAD_CONFIG.VIDEO.MIME_TYPES.has(file.mimetype);
+
+  if (isValidImage || isValidVideo) {
+    callback(null, true);
+  } else {
+    logger.warn(`[MULTER] Blocked invalid file. File: ${file.originalname} ${file.mimetype}`);
+    callback(
+      new AppError(
+        "Invalid file type. Only PNG, JPEG, MP4, MKV, AVI, and WEBM files are allowed.",
+        400,
+      ),
+    );
+  }
+};
+
 export const uploadImage = multer({
   storage: multer.memoryStorage(),
   fileFilter: imageFileFilter,
@@ -60,5 +81,14 @@ export const uploadVideo = multer({
   fileFilter: videoFileFilter,
   limits: {
     fileSize: UPLOAD_CONFIG.VIDEO.MAX_SIZE,
+  },
+});
+
+export const uploadMedia = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: combinedFileFilter,
+  limits: {
+    fileSize: UPLOAD_CONFIG.VIDEO.MAX_SIZE,
+    files: 10,
   },
 });
