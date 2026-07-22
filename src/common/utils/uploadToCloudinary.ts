@@ -4,7 +4,13 @@ import { cloudinary } from "../../config/cloudinary.js";
 import { logger } from "./logger.js";
 import { AppError } from "../error/errorHandler.js";
 
-interface CloudinaryUploadResult {
+interface CloudinaryMediaUploadResult {
+  url: string;
+  publicId: string;
+  detectedResourceType: string;
+}
+
+interface CloudinaryAttachmentUploadResult {
   url: string;
   publicId: string;
 }
@@ -19,7 +25,7 @@ const DEFAULT_FOLDERS = {
 export const uploadToCloudinary = async (
   file: Express.Multer.File,
   folder?: string,
-): Promise<CloudinaryUploadResult> => {
+): Promise<CloudinaryMediaUploadResult> => {
   return new Promise((resolve, reject) => {
     let resolveFolder = folder;
     if (!resolveFolder) {
@@ -64,6 +70,7 @@ export const uploadToCloudinary = async (
         resolve({
           url: result.secure_url,
           publicId: result.public_id,
+          detectedResourceType: result.resource_type,
         });
       },
     );
@@ -74,7 +81,7 @@ export const uploadToCloudinary = async (
 export const uploadAttachmentToCloudinary = async (
   buffer: Buffer,
   originalFileName: string,
-): Promise<CloudinaryUploadResult> => {
+): Promise<CloudinaryAttachmentUploadResult> => {
   return new Promise((resolve, reject) => {
     const ext = path.extname(originalFileName).toLowerCase();
     const uniqueSuffix = crypto.randomUUID();
