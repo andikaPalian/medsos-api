@@ -13,6 +13,7 @@ import { userRouter } from "./modules/user/routes/user.routes.js";
 import { followRouter } from "./modules/follow/routes/follow.routes.js";
 import { postRouter } from "./modules/post/routes/post.routes.js";
 import { likeRouter } from "./modules/like/routes/like.routes.js";
+import { commentRouter } from "./modules/comment/routes/comment.routes.js";
 
 const API_PREFIX = "api/v1" as const;
 
@@ -68,6 +69,7 @@ export const createApp = (io: SocketServer) => {
   app.use(`${API_PREFIX}/follow`, followRouter);
   app.use(`${API_PREFIX}/post`, postRouter);
   app.use(`${API_PREFIX}/like`, likeRouter);
+  app.use(`${API_PREFIX}/comment`, commentRouter);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
