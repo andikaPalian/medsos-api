@@ -30,8 +30,8 @@ interface CreateNotificationInput {
   userId: string;
   senderId: string;
   type: NotificationType;
-  postId: string;
-  storyId: string;
+  postId: string | null;
+  storyId: string | null;
   message: string;
 }
 
@@ -67,25 +67,29 @@ export const findNotifications = async ({
   });
 };
 
-export const deleteNotification = async (userId: string, notificationId: string): Promise<void> => {
+export const deleteNotification = async (
+  userId: string,
+  notificationId: string,
+): Promise<boolean> => {
   try {
-    await prisma.notification.deleteMany({
+    const result = await prisma.notification.deleteMany({
       where: {
         id: notificationId,
         userId,
       },
     });
+    return result.count > 0;
   } catch (error) {
-    handlePrismaError(error);
+    return handlePrismaError(error);
   }
 };
 
 export const markNotificationAsRead = async (
   userId: string,
   notificationId: string,
-): Promise<void> => {
+): Promise<boolean> => {
   try {
-    await prisma.notification.updateMany({
+    const result = await prisma.notification.updateMany({
       where: {
         id: notificationId,
         userId,
@@ -94,7 +98,8 @@ export const markNotificationAsRead = async (
         isRead: true,
       },
     });
+    return result.count > 0;
   } catch (error) {
-    handlePrismaError(error);
+    return handlePrismaError(error);
   }
 };
