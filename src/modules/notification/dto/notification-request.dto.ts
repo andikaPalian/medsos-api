@@ -8,3 +8,9 @@ export interface NotifyTargetArgs {
   storyId: string | null;
   type: NotificationType;
 }
+
+export interface GetNotificationsDTO {
+  userId: string;
+  limit: number;
+  cursor: string | null;
+}
