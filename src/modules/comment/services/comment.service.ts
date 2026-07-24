@@ -1,12 +1,15 @@
 import * as commentRepository from "../repositories/comment.repository.js";
 import * as postRepository from "../../post/repositories/post.repository.js";
 import * as notificationRepository from "../../notification/repositories/notification.repository.js";
+import * as userRepository from "../../user/repositories/user.repository.js";
 import { CommentResponseDTO, PaginatedCommentDTO } from "../dto/comment-response.dto.js";
 import { AppError } from "../../../common/error/errorHandler.js";
 import { getViewablePost } from "../../post/services/post.service.js";
 import { CreateCommentDTO, CreateReplyDTO, GetCommentstDTO } from "../dto/comment-request.dto.js";
 import { logger } from "../../../common/utils/logger.js";
 import { paginateCursor } from "../../../common/utils/pagination.js";
+import { notificationTemplate } from "../../../common/utils/notifcationTemplate.js";
+import { notifiyTarget } from "../../notification/services/notification.service.js";
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
@@ -27,13 +30,11 @@ const mapComment = (comment: commentRepository.CommentWithReplies): CommentRespo
 
 export const commentOnPost = async ({
   authorId,
+  authorUsername,
   postId,
   content,
 }: CreateCommentDTO): Promise<CommentResponseDTO> => {
-  const post = await postRepository.findPostById(postId);
-  if (!post) throw new AppError("Post not found", 404);
-
-  await getViewablePost(authorId, postId);
+  const post = await getViewablePost(authorId, postId);
 
   const comment = await commentRepository.createComment({
     authorId,
@@ -42,12 +43,13 @@ export const commentOnPost = async ({
   });
 
   if (post.authorId !== authorId) {
-    await notificationRepository.createNotification({
-      userId: post.authorId,
+    notifiyTarget({
+      targetUserId: post.authorId,
       senderId: authorId,
+      senderUsername: authorUsername,
+      postId,
+      storyId: null,
       type: "COMMENT",
-      postId: postId,
-      message: `${authorId} commented on your post`,
     });
   }
 
@@ -58,13 +60,11 @@ export const commentOnPost = async ({
 
 export const replyToComment = async ({
   authorId,
+  authorUsername,
   postId,
   commentId,
   content,
 }: CreateReplyDTO): Promise<CommentResponseDTO> => {
-  const post = await postRepository.findPostById(postId);
-  if (!post) throw new AppError("Post not found", 404);
-
   await getViewablePost(authorId, postId);
 
   const parentComment = await commentRepository.findCommentById(commentId);
@@ -80,12 +80,13 @@ export const replyToComment = async ({
   });
 
   if (parentComment.authorId !== authorId) {
-    await notificationRepository.createNotification({
-      userId: parentComment.authorId,
+    notifiyTarget({
+      targetUserId: parentComment.authorId,
       senderId: authorId,
-      type: "COMMENT",
+      senderUsername: authorUsername,
       postId,
-      message: `${authorId} replied to your comment`,
+      storyId: null,
+      type: "COMMENT",
     });
   }
 
@@ -101,9 +102,6 @@ export const getCommentsByPost = async ({
   cursor,
 }: GetCommentstDTO): Promise<PaginatedCommentDTO> => {
   const take = Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
-
-  const post = await postRepository.findPostById(postId);
-  if (!post) throw new AppError("Post not found", 404);
 
   await getViewablePost(viewerId, postId);
 
