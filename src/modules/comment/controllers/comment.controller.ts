@@ -18,11 +18,13 @@ export const commentOnPost = authHandler(
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
+    const username = req.user.username;
     const { postId } = req.params;
     const { content } = req.body;
 
     const comment = await commentService.commentOnPost({
       authorId: userId,
+      authorUsername: username,
       postId,
       content,
     });
@@ -40,11 +42,13 @@ export const replyToComment = authHandler(
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
+    const username = req.user.username;
     const { postId, commentId } = req.params;
     const { content } = req.body;
 
     const comment = await commentService.replyToComment({
       authorId: userId,
+      authorUsername: username,
       postId,
       commentId,
       content,
