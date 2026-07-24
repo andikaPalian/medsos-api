@@ -1,14 +1,10 @@
 import * as commentRepository from "../repositories/comment.repository.js";
-import * as postRepository from "../../post/repositories/post.repository.js";
-import * as notificationRepository from "../../notification/repositories/notification.repository.js";
-import * as userRepository from "../../user/repositories/user.repository.js";
 import { CommentResponseDTO, PaginatedCommentDTO } from "../dto/comment-response.dto.js";
 import { AppError } from "../../../common/error/errorHandler.js";
 import { getViewablePost } from "../../post/services/post.service.js";
 import { CreateCommentDTO, CreateReplyDTO, GetCommentstDTO } from "../dto/comment-request.dto.js";
 import { logger } from "../../../common/utils/logger.js";
 import { paginateCursor } from "../../../common/utils/pagination.js";
-import { notificationTemplate } from "../../../common/utils/notifcationTemplate.js";
 import { notifiyTarget } from "../../notification/services/notification.service.js";
 
 const DEFAULT_LIMIT = 10;
