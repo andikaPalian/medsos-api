@@ -1,16 +1,12 @@
 import * as likeRepository from "../repositories/like.repository.js";
-import * as postRepository from "../../post/repositories/post.repository.js";
-import * as notificationRepository from "../../notification/repositories/notification.repository.js";
-import { AppError } from "../../../common/error/errorHandler.js";
 import { getViewablePost } from "../../post/services/post.service.js";
 import { DuplicateEntryError } from "../../../common/error/domain.error.js";
 import { logger } from "../../../common/utils/logger.js";
+import { notifiyTarget } from "../../notification/services/notification.service.js";
+import { LikePostDTO } from "../dto/like-request.dto.js";
 
-export const likePost = async (userId: string, postId: string): Promise<void> => {
-  const post = await postRepository.findPostById(postId);
-  if (!post) throw new AppError("Post not found", 404);
-
-  await getViewablePost(userId, postId);
+export const likePost = async ({ userId, username, postId }: LikePostDTO): Promise<void> => {
+  const post = await getViewablePost(userId, postId);
 
   try {
     await likeRepository.addLike(userId, postId);
@@ -20,12 +16,13 @@ export const likePost = async (userId: string, postId: string): Promise<void> =>
   }
 
   if (post.authorId !== userId) {
-    await notificationRepository.createNotification({
-      userId: post.authorId,
+    notifiyTarget({
+      targetUserId: post.authorId,
       senderId: userId,
+      senderUsername: username,
+      postId,
+      storyId: null,
       type: "LIKE",
-      postId: postId,
-      message: `${userId} liked your post`,
     });
   }
 

@@ -10,9 +10,10 @@ export const likePost = authHandler(
     res: Response,
   ): Promise<void> => {
     const userId = req.user.id;
+    const username = req.user.username;
     const { postId } = req.params;
 
-    await likeService.likePost(userId, postId);
+    await likeService.likePost({ userId, username, postId });
 
     res.status(200).json({
       success: true,
