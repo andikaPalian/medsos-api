@@ -84,7 +84,7 @@ interface GetMessageQueryArgs {
   cursor: string | null;
 }
 
-type MessageWithSenderAndAttachment = Prisma.MessageGetPayload<{
+export type MessageWithSenderAndAttachment = Prisma.MessageGetPayload<{
   include: typeof AttachmentAndSenderInclude;
 }>;
 
