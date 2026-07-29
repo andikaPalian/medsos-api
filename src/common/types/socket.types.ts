@@ -1,25 +1,45 @@
-export interface SocketUserData {
-  userId: string;
-  username: string;
+import { Server, Socket } from "socket.io";
+import { Request } from "express";
+import { NotificationResponseDTO } from "../../modules/notification/dto/notification-response.dto.js";
+import { MessageWithSenderAndAttachment } from "../../modules/message/repositories/message.repository.js";
+
+export interface ServerToClientEvents {
+  "message:new": (payload: MessageWithSenderAndAttachment) => void;
+  "message:read": (payload: { messageId: string; readBy: string }) => void;
+  "typing:start": (payload: { userId: string; roomId: string }) => void;
+  "typing:stop": (payload: { userId: string; roomId: string }) => void;
+  "notification:new": (payload: NotificationResponseDTO) => void;
+  "presence:online": (payload: { userId: string }) => void;
+  "presence:offline": (payload: { userId: string }) => void;
+  error: (payload: { messageId: string; statusCode?: number }) => void;
 }
 
 export interface ClientToServerEvents {
-  "chat:join_room": (data: { roomId: string }) => void;
-  "chat:leave_room": (data: { roomId: string }) => void;
-  "chat:typing": (data: { roomId: string; isTyping: boolean }) => void;
-  "chat:mark_read": (data: { roomId: string; messageId: string }) => void;
-}
-
-export interface ServerToClientEvents {
-  "chat:new_message": (message: string) => void;
-  "chat:user_typing": (data: { userId: string; isTyping: boolean }) => void;
-  "chat:message_read": (data: { roomId: string; messageId: string }) => void;
-  "notification:new": (notificationId: string) => void;
-  "presence:update": (data: { userId: string; status: "ONLINE" | "OFFLINE" }) => void;
+  "room:join": (payload: { roomId: string }) => void;
+  "typing:start": (payload: { roomId: string }) => void;
+  "typing:stop": (payload: { roomId: string }) => void;
+  "message:markRead": (payload: { messageId: string }) => void;
 }
 
 export interface InterServerEvents {}
 
 export interface SocketData {
-  user: SocketUserData;
+  userId: string;
+  username: string;
 }
+
+export type AppServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
+export type AppSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
+export const getIO = (req: Request): AppServer => req.app.get("io") as AppServer;

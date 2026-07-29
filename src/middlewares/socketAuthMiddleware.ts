@@ -1,37 +1,30 @@
-import { Socket } from "socket.io";
-import { SocketData } from "../common/types/socket.types.js";
-import { verifyToken } from "../common/utils/jwt.js";
+import * as cookie from "cookie";
+import { AppSocket } from "../common/types/socket.types.js";
+import { AccessTokenPayload, verifyToken } from "../common/utils/jwt.js";
 import { logger } from "../common/utils/logger.js";
 
-const getCookieValue = (cookieString: string | undefined, cookieName: string): string | null => {
-  if (!cookieString) return null;
-  const match = cookieString.match(new RegExp(`(^|; )${cookieName}=([^;]*)`));
-  return match ? decodeURIComponent(match[2]) : null;
-};
-
-export const socketAuth = async (
-  socket: Socket<any, any, any, SocketData>,
-  next: (err?: Error) => void,
-): Promise<void> => {
-  const cookieHeader = socket.handshake.headers?.cookie;
-
-  let token = socket.handshake.auth?.token || getCookieValue(cookieHeader, "accessToken");
-  if (!token && socket.handshake.headers?.authorization?.startsWith("Bearer ")) {
-    token = socket.handshake.headers.authorization.split(" ")[1];
-  }
-  if (!token) {
-    const error = new Error("Authentication failed. Access token is missing.") as any;
-    error.data = { code: "TOKEN_MISSING" };
-    return next(error);
-  }
-
+export const socketAuth = async (socket: AppSocket, next: (err?: Error) => void): Promise<void> => {
   try {
-    const decoded = await verifyToken(token);
+    let token = socket.handshake.auth?.token as string | undefined;
 
-    socket.data.user = {
-      userId: String(decoded.sub || decoded.id),
-      username: decoded.username || "",
-    };
+    if (!token && socket.handshake.headers.cookie) {
+      const cookies = cookie.parseCookie(socket.handshake.headers.cookie);
+      token = cookies["accessToken"];
+    }
+
+    if (!token && socket.handshake.headers.authorization?.startsWith("Bearer ")) {
+      token = socket.handshake.headers.authorization.split(" ")[1];
+    }
+    if (!token) {
+      const error = new Error("Authentication failed. Access token is missing.") as any;
+      error.data = { code: "TOKEN_MISSING" };
+      return next(error);
+    }
+
+    const decoded = await verifyToken<AccessTokenPayload>(token);
+
+    socket.data.userId = decoded.sub;
+    socket.data.username = decoded.username;
 
     next();
   } catch (error: any) {
