@@ -11,7 +11,7 @@ export interface ServerToClientEvents {
   "notification:new": (payload: NotificationResponseDTO) => void;
   "presence:online": (payload: { userId: string }) => void;
   "presence:offline": (payload: { userId: string }) => void;
-  error: (payload: { messageId: string; statusCode?: number }) => void;
+  error: (payload: { message: string; statusCode?: number }) => void;
 }
 
 export interface ClientToServerEvents {
