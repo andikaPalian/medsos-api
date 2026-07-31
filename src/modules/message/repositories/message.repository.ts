@@ -2,6 +2,14 @@ import { Message, MessageDeletion, MessageType, Prisma, Room } from "@prisma/cli
 import { prisma } from "../../../config/client.js";
 import { handlePrismaError } from "../../../common/utils/prismaErrorHandler.js";
 
+const attachmentSummarySelect = Prisma.validator<Prisma.MessageAttachmentSelect>()({
+  id: true,
+  fileName: true,
+  fileSize: true,
+  mimeType: true,
+  duration: true,
+});
+
 const MessageAttachmentInclude = Prisma.validator<Prisma.MessageAttachmentInclude>()({
   message: {
     select: {
@@ -27,13 +35,7 @@ const MessageInclude = Prisma.validator<Prisma.MessageInclude>()({
     },
   },
   attachments: {
-    select: {
-      id: true,
-      fileName: true,
-      fileSize: true,
-      mimeType: true,
-      duration: true,
-    },
+    select: attachmentSummarySelect,
   },
 });
 
@@ -45,7 +47,9 @@ const AttachmentAndSenderInclude = Prisma.validator<Prisma.MessageInclude>()({
       username: true,
     },
   },
-  attachments: true,
+  attachments: {
+    select: attachmentSummarySelect,
+  },
 });
 
 interface AttachmentInput {
@@ -237,6 +241,50 @@ export const markAsDeletedForEveryone = async (messageId: string): Promise<Messa
         authTag: null,
       },
     });
+  } catch (error) {
+    return handlePrismaError(error);
+  }
+};
+
+export const markAsRead = async (messageId: string, userId: string): Promise<Message | null> => {
+  try {
+    const result = await prisma.message.updateMany({
+      where: {
+        id: messageId,
+        receiverId: userId,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    if (result.count === 0) return null;
+
+    return await prisma.message.findUnique({
+      where: {
+        id: messageId,
+      },
+    });
+  } catch (error) {
+    return handlePrismaError(error);
+  }
+};
+
+export const markRoomAsRead = async (roomId: string, userId: string): Promise<number> => {
+  try {
+    const result = await prisma.message.updateMany({
+      where: {
+        roomId,
+        receiverId: userId,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    return result.count;
   } catch (error) {
     return handlePrismaError(error);
   }
