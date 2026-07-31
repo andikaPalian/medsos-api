@@ -6,10 +6,13 @@ import { logger } from "./common/utils/logger.js";
 import { createApp } from "./app.js";
 import { closeRedisConnection } from "./config/redis.js";
 import { connectCloudinary } from "./config/cloudinary.js";
+import { AppServer } from "./common/types/socket.types.js";
+import { setSocketServer } from "./config/socketRegistry.js";
+import { registerSocketServer } from "./socket/index.js";
 
 const httpServer = createServer();
 
-const io = new SocketServer(httpServer, {
+const io: AppServer = new SocketServer(httpServer, {
   cors: {
     origin: env.CLIENT_URL,
     methods: ["GET", "POST"],
@@ -18,6 +21,8 @@ const io = new SocketServer(httpServer, {
   pingTimeout: 60000,
   pingInterval: 25000,
 });
+setSocketServer(io);
+registerSocketServer(io);
 
 const app = createApp(io);
 httpServer.on("request", app);
