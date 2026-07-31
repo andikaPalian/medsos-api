@@ -1,4 +1,4 @@
-import { markUserOffline, markUserOnline } from "../../common/state/socket.presence.js";
+import { markUserOffline, markUserOnline } from "../state/socket.presence.js";
 import { AppServer, AppSocket } from "../../common/types/socket.types.js";
 import { logger } from "../../common/utils/logger.js";
 
