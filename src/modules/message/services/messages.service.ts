@@ -227,6 +227,17 @@ export const editMessageContent = async (
   });
 };
 
+export const markMessageAsRead = async (
+  userId: string,
+  messageId: string,
+): Promise<Message | null> => {
+  return await messageRepository.markAsRead(messageId, userId);
+};
+
+export const markMessageRoomAsRead = async (userId: string, roomId: string): Promise<number> => {
+  return await messageRepository.markRoomAsRead(roomId, userId);
+};
+
 // Service for delete message for my self
 export const deleteMessageForHimself = async (
   userId: string,
