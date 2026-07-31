@@ -291,6 +291,8 @@ model Message {
   attachments          MessageAttachment[]
 
   @@index([roomId, createdAt(sort: Desc)])
+  @@index([roomId, receiverId, isRead])
+  @@index([receiverId, isRead])
 }
 
 model MessageAttachment {
