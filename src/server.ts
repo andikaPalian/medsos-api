@@ -7,8 +7,8 @@ import { createApp } from "./app.js";
 import { closeRedisConnection } from "./config/redis.js";
 import { connectCloudinary } from "./config/cloudinary.js";
 import { AppServer } from "./common/types/socket.types.js";
-import { setSocketServer } from "./config/socketRegistry.js";
 import { registerSocketServer } from "./socket/index.js";
+import { setSocketServer } from "./socket/registry.js";
 
 const httpServer = createServer();
 
