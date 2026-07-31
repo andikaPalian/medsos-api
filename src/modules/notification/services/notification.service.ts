@@ -1,6 +1,7 @@
 import { logger } from "../../../common/utils/logger.js";
 import { notificationTemplate } from "../../../common/utils/notifcationTemplate.js";
 import { paginateCursor } from "../../../common/utils/pagination.js";
+import { getSocketServer } from "../../../socket/registry.js";
 import { GetNotificationsDTO, NotifyTargetArgs } from "../dto/notification-request.dto.js";
 import {
   NotificationResponseDTO,
@@ -33,7 +34,6 @@ const mapNotification = (
 });
 
 export const notifyTarget = ({
-  io,
   targetUserId,
   senderId,
   senderUsername,
@@ -53,7 +53,9 @@ export const notifyTarget = ({
       message,
     })
     .then((notification) => {
-      io.to(`user:${targetUserId}`).emit("notification:new", mapNotification(notification));
+      getSocketServer()
+        .to(`user:${targetUserId}`)
+        .emit("notification:new", mapNotification(notification));
     })
     .catch((error: Error) =>
       logger.error(`[NOTIFICATION SERVICE] Failed to create notification: ${error.message}`),
