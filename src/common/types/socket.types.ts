@@ -11,6 +11,7 @@ export interface ServerToClientEvents {
   "notification:new": (payload: NotificationResponseDTO) => void;
   "presence:online": (payload: { userId: string }) => void;
   "presence:offline": (payload: { userId: string }) => void;
+  "room:readAll": (payload: { roomId: string; readBy: string }) => void;
   error: (payload: { message: string; statusCode?: number }) => void;
 }
 
@@ -18,6 +19,7 @@ export interface ClientToServerEvents {
   "room:join": (payload: { roomId: string }) => void;
   "typing:start": (payload: { roomId: string }) => void;
   "typing:stop": (payload: { roomId: string }) => void;
+  "room:markRead": (payload: { roomId: string }) => void;
   "message:markRead": (payload: { messageId: string }) => void;
 }
 
