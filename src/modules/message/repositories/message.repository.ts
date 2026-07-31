@@ -246,24 +246,14 @@ export const markAsDeletedForEveryone = async (messageId: string): Promise<Messa
   }
 };
 
-export const markAsRead = async (messageId: string, userId: string): Promise<Message | null> => {
+export const markAsRead = async (messageId: string): Promise<Message> => {
   try {
-    const result = await prisma.message.updateMany({
+    return await prisma.message.update({
       where: {
         id: messageId,
-        receiverId: userId,
-        isRead: false,
       },
       data: {
         isRead: true,
-      },
-    });
-
-    if (result.count === 0) return null;
-
-    return await prisma.message.findUnique({
-      where: {
-        id: messageId,
       },
     });
   } catch (error) {
@@ -307,4 +297,46 @@ export const findAttachmentById = async (
     },
     include: MessageAttachmentInclude,
   });
+};
+
+export const findRoomParticipantIds = async (roomId: string): Promise<string[]> => {
+  const participants = await prisma.roomParticipant.findMany({
+    where: {
+      roomId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  return participants.map((p) => p.userId);
+};
+
+export const findCoParticipantIds = async (userId: string): Promise<string[]> => {
+  const rooms = await prisma.roomParticipant.findMany({
+    where: {
+      userId,
+    },
+    select: {
+      roomId: true,
+    },
+  });
+  const roomIds = rooms.map((r) => r.roomId);
+
+  const coParticipants = await prisma.roomParticipant.findMany({
+    where: {
+      roomId: {
+        in: roomIds,
+      },
+      userId: {
+        not: userId,
+      },
+    },
+    select: {
+      userId: true,
+    },
+    distinct: ["userId"],
+  });
+
+  return coParticipants.map((p) => p.userId);
 };

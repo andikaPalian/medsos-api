@@ -9,7 +9,15 @@ export type MessageWithSenderAndAttachments = Prisma.MessageGetPayload<{
         username: true;
       };
     };
-    attachments: true;
+    attachments: {
+      select: {
+        id: true;
+        fileName: true;
+        fileSize: true;
+        mimeType: true;
+        duration: true;
+      };
+    };
   };
 }>;
 
