@@ -1,6 +1,8 @@
 import { NotificationType } from "@prisma/client";
+import { AppServer } from "../../../common/types/socket.types.js";
 
 export interface NotifyTargetArgs {
+  io: AppServer;
   targetUserId: string;
   senderId: string;
   senderUsername: string;

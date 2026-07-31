@@ -41,13 +41,16 @@ interface FindNotificationsQueryArgs {
   cursor: string | null;
 }
 
-export const createNotification = async (input: CreateNotificationInput): Promise<void> => {
+export const createNotification = async (
+  input: CreateNotificationInput,
+): Promise<NotificationWithDetails> => {
   try {
-    await prisma.notification.create({
+    return await prisma.notification.create({
       data: input,
+      include: notificationInclude,
     });
   } catch (error) {
-    handlePrismaError(error);
+    return handlePrismaError(error);
   }
 };
 

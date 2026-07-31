@@ -32,7 +32,8 @@ const mapNotification = (
   createdAt: notification.createdAt,
 });
 
-export const notifiyTarget = ({
+export const notifyTarget = ({
+  io,
   targetUserId,
   senderId,
   senderUsername,
@@ -50,6 +51,9 @@ export const notifiyTarget = ({
       postId,
       storyId,
       message,
+    })
+    .then((notification) => {
+      io.to(`user:${targetUserId}`).emit("notification:new", mapNotification(notification));
     })
     .catch((error: Error) =>
       logger.error(`[NOTIFICATION SERVICE] Failed to create notification: ${error.message}`),
