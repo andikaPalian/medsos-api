@@ -11,6 +11,7 @@ import {
 } from "../validators/message.validation.js";
 import { AuthenticatedRequest } from "../../../common/types/authenticated-request.js";
 import { authHandler } from "../../../common/utils/authHandler.js";
+import { getSocketServer } from "../../../socket/registry.js";
 
 export const sendMessage = authHandler(
   async (
@@ -20,7 +21,7 @@ export const sendMessage = authHandler(
     const senderId = req.user.id;
     const { receiverId, message, replyToId, forwardFromId } = req.body;
 
-    const data = await messageService.createMessage({
+    const newMessage = await messageService.createMessage({
       senderId,
       receiverId,
       message,
@@ -28,10 +29,12 @@ export const sendMessage = authHandler(
       forwardFromId,
     });
 
+    getSocketServer().to(`user:${receiverId}`).emit("message:new", newMessage);
+
     res.status(201).json({
       success: true,
       message: "Message sent successfully",
-      data: data,
+      data: newMessage,
     });
   },
 );

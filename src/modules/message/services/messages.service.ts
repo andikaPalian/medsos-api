@@ -231,10 +231,24 @@ export const markMessageAsRead = async (
   userId: string,
   messageId: string,
 ): Promise<Message | null> => {
-  return await messageRepository.markAsRead(messageId, userId);
+  const message = await messageRepository.findMessageById(messageId);
+  if (!message) throw new AppError("Message not found", 404);
+  if (message.receiverId !== userId) {
+    throw new AppError("Unauthorized: You are not the receiver of this message.", 403);
+  }
+
+  return await messageRepository.markAsRead(messageId);
 };
 
 export const markMessageRoomAsRead = async (userId: string, roomId: string): Promise<number> => {
+  const room = await messageRepository.findRoomById(roomId);
+  if (!room) throw new AppError("Room not found", 404);
+
+  const participants = await messageRepository.findRoomParticipantIds(roomId);
+  if (!participants.includes(userId)) {
+    throw new AppError("Unauthorized: You are not a participant of this chat room.", 403);
+  }
+
   return await messageRepository.markRoomAsRead(roomId, userId);
 };
 
