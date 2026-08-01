@@ -3,6 +3,7 @@ import * as messageController from "../controllers/message.controller.js";
 import * as messageValidator from "../validators/message.validation.js";
 import { userAuth } from "../../../middlewares/auth.middleware.js";
 import { validate } from "../../../middlewares/validator.js";
+import { uploadMedia } from "../../../middlewares/multer.js";
 
 export const messageRouter = Router();
 
@@ -10,6 +11,7 @@ messageRouter.use(userAuth);
 
 messageRouter.post(
   "/",
+  uploadMedia.single("attachment"),
   validate(messageValidator.sendMessageSchema),
   messageController.sendMessage,
 );

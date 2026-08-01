@@ -124,8 +124,8 @@ export const getMessageByRoom = async ({
   const room = await messageRepository.findRoomById(roomId);
   if (!room) throw new AppError("Room messages not found", 404);
 
-  const roomPartisipants = roomId.split("_");
-  if (!roomPartisipants.includes(String(userId))) {
+  const roomPartisipants = await messageRepository.findRoomParticipantIds(roomId);
+  if (!roomPartisipants.includes(userId)) {
     logger.warn(`[MESSAGE SERVICE] User ${userId} unauthorized access attempt to Room: ${roomId}`);
     throw new AppError("Unauthorized: You are not a participant of this chat room.", 403);
   }
@@ -227,10 +227,7 @@ export const editMessageContent = async (
   });
 };
 
-export const markMessageAsRead = async (
-  userId: string,
-  messageId: string,
-): Promise<Message | null> => {
+export const markMessageAsRead = async (userId: string, messageId: string): Promise<Message> => {
   const message = await messageRepository.findMessageById(messageId);
   if (!message) throw new AppError("Message not found", 404);
   if (message.receiverId !== userId) {

@@ -20,6 +20,7 @@ export const sendMessage = authHandler(
   ): Promise<void> => {
     const senderId = req.user.id;
     const { receiverId, message, replyToId, forwardFromId } = req.body;
+    const uploadFile = req.file as Express.Multer.File | undefined;
 
     const newMessage = await messageService.createMessage({
       senderId,
@@ -27,6 +28,7 @@ export const sendMessage = authHandler(
       message,
       replyToId,
       forwardFromId,
+      uploadFile,
     });
 
     getSocketServer().to(`user:${receiverId}`).emit("message:new", newMessage);
@@ -132,10 +134,24 @@ export const downloadAttachment = authHandler(
 
     res.set({
       "Content-Type": mimeType,
-      "Content-Disposition": `inline; fileName="${encodeURIComponent(fileName)}"`,
+      "Content-Disposition": `inline; filename="${encodeURIComponent(fileName)}"`,
       "Content-Length": buffer.length.toString(),
     });
 
     res.send(buffer);
+  },
+);
+
+export const markMessageAsRead = authHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user.id;
+    const { messageId } = req.params;
+
+    await messageService.markMessageAsRead(userId, messageId);
+
+    res.status(200).json({
+      success: true,
+      message: "Message marked as read successfully",
+    });
   },
 );
