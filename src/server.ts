@@ -23,9 +23,15 @@ const io: AppServer = new SocketServer(httpServer, {
   pingInterval: 25000,
 });
 
-const pubClient = redisClient.duplicate();
-const subClient = redisClient.duplicate();
-io.adapter(createAdapter(pubClient, subClient));
+const pubClient = redisClient.duplicate({ keyPrefix: "" });
+const subClient = redisClient.duplicate({ keyPrefix: "" });
+pubClient.on("error", (error: Error) => {
+  logger.error(`[REDIS PUB] Connection error: ${error.message}`);
+});
+subClient.on("error", (error: Error) => {
+  logger.error(`[REDIS SUB] Connection error: ${error.message}`);
+});
+io.adapter(createAdapter(pubClient, subClient, { key: `${env.APP_NAME ?? "app"}:socket.io` }));
 
 setSocketServer(io);
 registerSocketServer(io);
