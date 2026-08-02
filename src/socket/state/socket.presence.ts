@@ -1,11 +1,18 @@
 import { logger } from "../../common/utils/logger.js";
 import { redisClient } from "../../config/redis.js";
 
+const PRESENCE_TTL_SECONDS = 60 * 60 * 6;
+
 // Multi-device/multi-browser-support - return true if user was the first connection
 export const markUserOnline = async (userId: string, socketId: string): Promise<boolean> => {
   const key = `presence:user:${userId}`;
   try {
-    const result = await redisClient.multi().sadd(key, socketId).scard(key).exec();
+    const result = await redisClient
+      .multi()
+      .sadd(key, socketId)
+      .scard(key)
+      .expire(key, PRESENCE_TTL_SECONDS)
+      .exec();
     if (!result) return false;
 
     const count = result[1][1] as number;
@@ -23,7 +30,12 @@ export const markUserOffline = async (userId: string, socketId: string): Promise
   const key = `presence:user:${userId}`;
 
   try {
-    const results = await redisClient.multi().srem(key, socketId).scard(key).exec();
+    const results = await redisClient
+      .multi()
+      .srem(key, socketId)
+      .scard(key)
+      .expire(key, PRESENCE_TTL_SECONDS)
+      .exec();
     if (!results) return false;
 
     const remainingSocket = results[1][1] as number;

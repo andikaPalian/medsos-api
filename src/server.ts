@@ -33,21 +33,11 @@ registerSocketServer(io);
 const app = createApp(io);
 httpServer.on("request", app);
 
-// io.on("connection", (socket) => {
-//   logger.info(`[SOCKET] User connected: ${socket.id}`);
-
-//   // TODO: Add socket
-
-//   socket.on("disconnect", (reason) => {
-//     logger.info(`[SOCKET] User disconnected: ${socket.id} - reason: ${reason}`);
-//   });
-// });
-
 const gracefulShutdown = (signal: string): void => {
   logger.info(`[SERVER] ${signal} received - shutting down gracefully`);
 
-  httpServer.close(async () => {
-    logger.info("[SERVER] HTTP server closed");
+  io.close(async () => {
+    logger.info("[SERVER] Socket and HTTP server closed. Closing Redis connections...");
 
     await pubClient.quit();
     await subClient.quit();
