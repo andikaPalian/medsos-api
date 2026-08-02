@@ -1,10 +1,11 @@
 import "dotenv/config";
 import { createServer } from "http";
 import { Server as SocketServer } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
 import { env } from "./config/env.js";
 import { logger } from "./common/utils/logger.js";
 import { createApp } from "./app.js";
-import { closeRedisConnection } from "./config/redis.js";
+import { redisClient, closeRedisConnection } from "./config/redis.js";
 import { connectCloudinary } from "./config/cloudinary.js";
 import { AppServer } from "./common/types/socket.types.js";
 import { registerSocketServer } from "./socket/index.js";
@@ -21,31 +22,38 @@ const io: AppServer = new SocketServer(httpServer, {
   pingTimeout: 60000,
   pingInterval: 25000,
 });
+
+const pubClient = redisClient.duplicate();
+const subClient = redisClient.duplicate();
+io.adapter(createAdapter(pubClient, subClient));
+
 setSocketServer(io);
 registerSocketServer(io);
 
 const app = createApp(io);
 httpServer.on("request", app);
 
-io.on("connection", (socket) => {
-  logger.info(`[SOCKET] User connected: ${socket.id}`);
+// io.on("connection", (socket) => {
+//   logger.info(`[SOCKET] User connected: ${socket.id}`);
 
-  // TODO: Add socket
+//   // TODO: Add socket
 
-  socket.on("disconnect", (reason) => {
-    logger.info(`[SOCKET] User disconnected: ${socket.id} - reason: ${reason}`);
-  });
-});
+//   socket.on("disconnect", (reason) => {
+//     logger.info(`[SOCKET] User disconnected: ${socket.id} - reason: ${reason}`);
+//   });
+// });
 
 const gracefulShutdown = (signal: string): void => {
   logger.info(`[SERVER] ${signal} received - shutting down gracefully`);
 
   httpServer.close(async () => {
-    logger.info("[SERVER HTTP server closed");
+    logger.info("[SERVER] HTTP server closed");
 
+    await pubClient.quit();
+    await subClient.quit();
     await closeRedisConnection();
 
-    logger.info("[SERVER All connections closed. Process terminated.");
+    logger.info("[SERVER] All connections closed. Process terminated.");
     process.exit(0);
   });
 
@@ -68,7 +76,7 @@ process.on("uncaughtException", (error: Error) => {
   gracefulShutdown("uncaughtException");
 });
 
-const boostrap = async (): Promise<void> => {
+const bootstrap = async (): Promise<void> => {
   try {
     await connectCloudinary();
     logger.info("[SERVER] Cloudinary connected.");
@@ -84,4 +92,4 @@ const boostrap = async (): Promise<void> => {
   }
 };
 
-boostrap();
+bootstrap();
