@@ -1,11 +1,13 @@
 import { Server, Socket } from "socket.io";
 import { Request } from "express";
 import { NotificationResponseDTO } from "../../modules/notification/dto/notification-response.dto.js";
-import { MessageWithSenderAndAttachment } from "../../modules/message/repositories/message.repository.js";
+import { MessageResponse } from "../../modules/message/dto/message-response.dto.js";
 
 export interface ServerToClientEvents {
-  "message:new": (payload: MessageWithSenderAndAttachment) => void;
+  "message:new": (payload: MessageResponse) => void;
+  "message:updated": (payload: MessageResponse) => void;
   "message:read": (payload: { messageId: string; readBy: string }) => void;
+  "message:recalled": (payload: { messageId: string; roomId: string }) => void;
   "typing:start": (payload: { userId: string; roomId: string }) => void;
   "typing:stop": (payload: { userId: string; roomId: string }) => void;
   "notification:new": (payload: NotificationResponseDTO) => void;
