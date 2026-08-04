@@ -15,6 +15,7 @@ import {
   AttachmentData,
   DecryptedAttachmentDTO,
   MessageAttachmentSummaryDTO,
+  MessageResponse,
   MessageWithSenderAndAttachments,
   PaginatedMessagesDTO,
 } from "../dto/message-response.dto.js";
@@ -33,6 +34,57 @@ const deriveMessageType = (mimeType: string): MessageType => {
   return "DOCUMENT";
 };
 
+const mapMessageResponse = (
+  msg: messageRepository.MessageWithParticipants,
+  roomId?: string,
+): MessageResponse => {
+  let content: string;
+
+  if (msg.isDeletedForEveryone) {
+    content = "This message was deleted.";
+  } else {
+    try {
+      const decryptedMessage = decryptMessage(msg.content, msg.iv, msg.authTag);
+      content = decryptedMessage ?? "Failed";
+    } catch (error) {
+      if (error instanceof MessageDecryptionError) {
+        logger.error(
+          `[MESSAGE SERVICE] Failed to decrypt message ${msg.id}${roomId ? ` in Room ${roomId}` : ""}`,
+        );
+        content = "Failed to decrypt message";
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  const attachments: MessageAttachmentSummaryDTO[] = msg.attachments.map((att) => ({
+    id: att.id,
+    fileName: att.fileName,
+    fileSize: att.fileSize,
+    mimeType: att.mimeType,
+    duration: att.duration,
+  }));
+
+  return {
+    id: msg.id,
+    type: msg.type,
+    content,
+    createdAt: msg.createdAt,
+    updatedAt: msg.updatedAt,
+    senderId: msg.senderId,
+    receiverId: msg.receiverId,
+    sender: msg.sender,
+    receiver: msg.receiver,
+    isRead: msg.isRead,
+    isEdited: msg.isEdited,
+    isDeletedFromEveryone: msg.isDeletedForEveryone,
+    replyToId: msg.replyToId,
+    forwardFromId: msg.forwardFromId,
+    attachments,
+  };
+};
+
 // Service for create a new message
 export const createMessage = async ({
   senderId,
@@ -41,7 +93,7 @@ export const createMessage = async ({
   replyToId,
   forwardFromId,
   uploadFile,
-}: CreateMessageDTO): Promise<MessageWithSenderAndAttachments> => {
+}: CreateMessageDTO): Promise<MessageResponse> => {
   if (!message && !uploadFile) throw new AppError("Message must contain text or attachment", 400);
   const receiver = await userRepository.findUserById(receiverId);
   if (!receiver) {
@@ -111,7 +163,7 @@ export const createMessage = async ({
 
   logger.info(`[MESSAGE SERVICE] Message successfully sent in Room: ${chatRoomId}`);
 
-  return newMessage;
+  return mapMessageResponse(newMessage);
 };
 
 // Service for get all message in a room chat
@@ -141,51 +193,7 @@ export const getMessageByRoom = async ({
 
   const { items, nextCursor, hasNextPage } = paginateCursor(messages, take, (m) => m.id);
 
-  const formattedMessages = items.reverse().map((msg) => {
-    let content: string;
-
-    if (msg.isDeletedForEveryone) {
-      content = "This message was deleted.";
-    } else {
-      try {
-        const decryptedMessage = decryptMessage(msg.content, msg.iv, msg.authTag);
-        content = decryptedMessage ?? "Failed";
-      } catch (error) {
-        if (error instanceof MessageDecryptionError) {
-          logger.error(`[MESSAGE SERVICE] Failed to decrypt message ${msg.id} in Room ${roomId}`);
-          content = "Failed to decrypt message";
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    const attachments: MessageAttachmentSummaryDTO[] = msg.attachments.map((att) => ({
-      id: att.id,
-      fileName: att.fileName,
-      fileSize: att.fileSize,
-      mimeType: att.mimeType,
-      duration: att.duration,
-    }));
-
-    return {
-      id: msg.id,
-      type: msg.type,
-      content,
-      createdAt: msg.createdAt,
-      updatedAt: msg.updatedAt,
-      senderId: msg.senderId,
-      receiverId: msg.receiverId,
-      sender: msg.sender,
-      receiver: msg.receiver,
-      isRead: msg.isRead,
-      isEdited: msg.isEdited,
-      isDeletedFromEveryone: msg.isDeletedForEveryone,
-      replyToId: msg.replyToId,
-      forwardFromId: msg.forwardFromId,
-      attachments,
-    };
-  });
+  const formattedMessages = items.reverse().map((msg) => mapMessageResponse(msg, roomId));
 
   return {
     data: formattedMessages,
@@ -199,7 +207,7 @@ export const editMessageContent = async (
   userId: string,
   messageId: string,
   newContent: string,
-): Promise<Message> => {
+): Promise<MessageResponse> => {
   const message = await messageRepository.findMessageById(messageId);
   if (!message) throw new AppError("Message not found", 404);
 
@@ -219,12 +227,14 @@ export const editMessageContent = async (
   }
 
   const { iv, authTag, encryptedMessage } = encryptMessage(newContent);
-  return await messageRepository.updateMessageContent({
+  const updatedMessage = await messageRepository.updateMessageContent({
     messageId,
     encryptedContent: encryptedMessage,
     iv,
     authTag,
   });
+
+  return mapMessageResponse(updatedMessage);
 };
 
 export const markMessageAsRead = async (userId: string, messageId: string): Promise<Message> => {

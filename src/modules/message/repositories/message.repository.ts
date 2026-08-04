@@ -92,7 +92,7 @@ export type MessageWithSenderAndAttachment = Prisma.MessageGetPayload<{
   include: typeof AttachmentAndSenderInclude;
 }>;
 
-type MessageWithParticipants = Prisma.MessageGetPayload<{ include: typeof MessageInclude }>;
+export type MessageWithParticipants = Prisma.MessageGetPayload<{ include: typeof MessageInclude }>;
 
 type MessageAttachment = Prisma.MessageAttachmentGetPayload<{
   include: typeof MessageAttachmentInclude;
@@ -110,7 +110,7 @@ export const findMessageById = async (messageId: string): Promise<Message | null
 // Query to insert a new message
 export const insertMessage = async (
   input: InsertMessageInput,
-): Promise<MessageWithSenderAndAttachment> => {
+): Promise<MessageWithParticipants> => {
   try {
     return await prisma.message.create({
       data: {
@@ -148,7 +148,7 @@ export const insertMessage = async (
             }
           : undefined,
       },
-      include: AttachmentAndSenderInclude,
+      include: MessageInclude,
     });
   } catch (error) {
     return handlePrismaError(error);
@@ -184,7 +184,7 @@ export const updateMessageContent = async ({
   encryptedContent,
   iv,
   authTag,
-}: UpdateMessageInput): Promise<Message> => {
+}: UpdateMessageInput): Promise<MessageWithParticipants> => {
   try {
     return await prisma.message.update({
       where: {
@@ -196,6 +196,7 @@ export const updateMessageContent = async ({
         authTag,
         isEdited: true,
       },
+      include: MessageInclude,
     });
   } catch (error) {
     return handlePrismaError(error);
