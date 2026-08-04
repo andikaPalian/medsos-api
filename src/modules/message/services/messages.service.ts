@@ -16,7 +16,6 @@ import {
   DecryptedAttachmentDTO,
   MessageAttachmentSummaryDTO,
   MessageResponse,
-  MessageWithSenderAndAttachments,
   PaginatedMessagesDTO,
 } from "../dto/message-response.dto.js";
 import { paginateCursor } from "../../../common/utils/pagination.js";
