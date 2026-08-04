@@ -10,3 +10,7 @@ export const getSocketServer = (): AppServer => {
   if (!ioInstance) throw new Error("Socket server has not been initialized yet.");
   return ioInstance;
 };
+
+export const clearSocketServer = (): void => {
+  ioInstance = null;
+};
