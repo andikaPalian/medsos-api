@@ -31,7 +31,9 @@ export const sendMessage = authHandler(
       uploadFile,
     });
 
-    getSocketServer().to(`user:${receiverId}`).emit("message:new", newMessage);
+    getSocketServer()
+      .to([`user:${receiverId}`, `user:${senderId}`])
+      .emit("message:new", newMessage);
 
     res.status(201).json({
       success: true,
@@ -75,6 +77,12 @@ export const updateMessage = authHandler(
 
     const updatedMessage = await messageService.editMessageContent(userId, messageId, newMessage);
 
+    if (updatedMessage) {
+      getSocketServer()
+        .to([`user:${updatedMessage.receiverId}`, `user:${updatedMessage.senderId}`])
+        .emit("message:updated", updatedMessage);
+    }
+
     res.status(200).json({
       success: true,
       message: "Message updated successfully",
@@ -109,7 +117,16 @@ export const recallMessageForEveryone = authHandler(
     const userId = req.user.id;
     const { messageId } = req.params;
 
-    await messageService.deleteMessageForEveryone(userId, messageId);
+    const recalledMessage = await messageService.deleteMessageForEveryone(userId, messageId);
+
+    if (recalledMessage) {
+      getSocketServer()
+        .to([`user:${recalledMessage.receiverId}`, `user:${recalledMessage.senderId}`])
+        .emit("message:recalled", {
+          messageId: recalledMessage.id,
+          roomId: recalledMessage.roomId,
+        });
+    }
 
     res.status(200).json({
       success: true,
@@ -147,7 +164,13 @@ export const markMessageAsRead = authHandler(
     const userId = req.user.id;
     const { messageId } = req.params;
 
-    await messageService.markMessageAsRead(userId, messageId);
+    const message = await messageService.markMessageAsRead(userId, messageId);
+
+    if (message) {
+      getSocketServer()
+        .to([`user:${message.receiverId}`, `user:${message.senderId}`])
+        .emit("message:read", { messageId: message.id, readBy: userId });
+    }
 
     res.status(200).json({
       success: true,

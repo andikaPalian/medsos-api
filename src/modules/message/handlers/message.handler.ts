@@ -2,26 +2,46 @@ import { AppServer, AppSocket } from "../../../common/types/socket.types.js";
 import { socketHandler } from "../../../common/utils/socketHandlers.js";
 import * as messageService from "../services/messages.service.js";
 import * as messageRepository from "../repositories/message.repository.js";
+import { AppError } from "../../../common/error/errorHandler.js";
 
 export const registerMessageHandlers = (io: AppServer, socket: AppSocket): void => {
   const userId = socket.data.userId;
 
-  socket.on("room:join", async ({ roomId }) => {
-    const participants = await messageRepository.findRoomParticipantIds(roomId);
-    if (!participants.includes(userId)) {
-      socket.emit("error", { message: "Unauthorized: not a participant of this room" });
-      return;
-    }
-    socket.join(`room:${roomId}`);
-  });
+  socket.on(
+    "room:join",
+    socketHandler(socket, async ({ roomId }) => {
+      const participants = await messageRepository.findRoomParticipantIds(roomId);
+      if (!participants.includes(userId)) {
+        socket.emit("error", { message: "Unauthorized: not a participant of this room" });
+        return;
+      }
+      socket.join(`room:${roomId}`);
+    }),
+  );
 
-  socket.on("typing:start", ({ roomId }) => {
-    socket.to(`room:${roomId}`).emit("typing:start", { userId, roomId });
-  });
+  socket.on(
+    "typing:start",
+    socketHandler(socket, async ({ roomId }) => {
+      const isRoomParticipants = socket.rooms.has(`room:${roomId}`);
+      if (!isRoomParticipants) {
+        throw new AppError("Unauthorized: not a participant of this room", 403);
+      }
 
-  socket.on("typing:stop", ({ roomId }) => {
-    socket.to(`room:${roomId}`).emit("typing:stop", { userId, roomId });
-  });
+      socket.to(`room:${roomId}`).emit("typing:start", { userId, roomId });
+    }),
+  );
+
+  socket.on(
+    "typing:stop",
+    socketHandler(socket, async ({ roomId }) => {
+      const isRoomParticipants = socket.rooms.has(`room:${roomId}`);
+      if (!isRoomParticipants) {
+        throw new AppError("Unauthorized: not a participant of this room", 403);
+      }
+
+      socket.to(`room:${roomId}`).emit("typing:stop", { userId, roomId });
+    }),
+  );
 
   socket.on(
     "message:markRead",
