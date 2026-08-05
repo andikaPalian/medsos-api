@@ -92,6 +92,8 @@ model CloseFriends {
   createdAt DateTime @default(now())
 
   @@unique([userId, friendId]) // so as not to duplicate
+  @@index([userId])
+  @@index([friendId])
 }
 
 model Post {
