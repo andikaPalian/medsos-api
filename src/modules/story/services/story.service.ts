@@ -1,4 +1,3 @@
-import * as userRepository from "../../user/repositories/user.repository.js";
 import * as storyRepository from "../repositories/story.repository.js";
 import * as blockRepository from "../../block/repositories/block.repository.js";
 import * as followRepository from "../../follow/repositories/follow.repository.js";

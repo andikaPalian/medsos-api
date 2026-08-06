@@ -16,6 +16,7 @@ import { likeRouter } from "./modules/like/routes/like.routes.js";
 import { commentRouter } from "./modules/comment/routes/comment.routes.js";
 import { reportRouter } from "./modules/report/routes/report.routes.js";
 import { notificationRouter } from "./modules/notification/routes/notification.routes.js";
+import { storyRouter } from "./modules/story/routes/story.routes.js";
 
 const API_PREFIX = "api/v1" as const;
 
@@ -74,6 +75,7 @@ export const createApp = (io: SocketServer) => {
   app.use(`${API_PREFIX}/comment`, commentRouter);
   app.use(`${API_PREFIX}/report`, reportRouter);
   app.use(`${API_PREFIX}/notification`, notificationRouter);
+  app.use(`${API_PREFIX}/story`, storyRouter);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
