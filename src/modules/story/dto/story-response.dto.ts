@@ -10,12 +10,12 @@ interface StoryUserDTO {
   profilePic: string | null;
 }
 
-interface StoryViewerDTO {
-  id: string;
-  user: {
-    id: string;
-  };
-}
+// interface StoryViewerDTO {
+//   id: string;
+//   user: {
+//     id: string;
+//   };
+// }
 
 export interface StoryResponseDTO {
   id: string;
@@ -23,10 +23,8 @@ export interface StoryResponseDTO {
   isCloseFriends: boolean;
   user: StoryUserDTO;
   media: StoryMediaDTO[];
-  viewers: StoryViewerDTO[];
   createdAt: Date;
   expiresAt: Date;
-  totalViewers: number;
 }
 
 export interface StoryViewerResponseDTO {

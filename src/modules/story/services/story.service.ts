@@ -23,15 +23,8 @@ const mapStoryResponse = (story: storyRepository.StoryWithDetails): StoryRespons
     url: m.url,
     type: m.type,
   })),
-  viewers: story.viewers.map((v) => ({
-    id: v.id,
-    user: {
-      id: v.user.id,
-    },
-  })),
   createdAt: story.createdAt,
   expiresAt: story.expiresAt,
-  totalViewers: story._count.viewers,
 });
 
 const getViewableStory = async (
@@ -58,6 +51,11 @@ const getViewableStory = async (
     if (story.isCloseFriends) {
       const isCloseFriend = await closeFriendRepository.isCLoseFriends(viewerId, story.userId);
       if (!isCloseFriend) throw new AppError("This story is not available", 403);
+    }
+
+    const isViewer = story.viewers.find((v) => v.user.id === viewerId);
+    if (!isViewer) {
+      await storyRepository.createStoryViewer(storyId, viewerId);
     }
   }
 
