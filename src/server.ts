@@ -2,14 +2,18 @@ import "dotenv/config";
 import { createServer } from "http";
 import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
-import { env } from "./config/env.js";
-import { logger } from "./common/utils/logger.js";
+import { env } from "@core/config/env.config.js";
+import { logger } from "@core/utils/logger.js";
 import { createApp } from "./app.js";
-import { redisClient, closeRedisConnection } from "./config/redis.js";
-import { connectCloudinary } from "./config/cloudinary.js";
-import { AppServer } from "./common/types/socket.types.js";
-import { registerSocketServer } from "./socket/index.js";
-import { setSocketServer } from "./socket/registry.js";
+import { redisClient, closeRedisConnection } from "@core/config/redis.config.js";
+import { connectCloudinary } from "@core/config/cloudinary.config.js";
+import { AppServer } from "@core/types/socket.types.js";
+import { registerSocketServer } from "@infra/socket/socket.server.js";
+import { setSocketServer } from "@infra/socket/socket.registry.js";
+import { registerMessageHandlers } from "@modules/message/message.socket-handler.js";
+import { registerNotificationHandlers } from "@modules/notification/notification.socket-handler.js";
+import { initStoryCleanupCron } from "./jobs/story-cleanup.job.js";
+import { initTokenCleanupCron } from "./jobs/token-cleanup.job.js";
 
 const httpServer = createServer();
 
@@ -25,22 +29,36 @@ const io: AppServer = new SocketServer(httpServer, {
 
 const pubClient = redisClient.duplicate({ keyPrefix: "" });
 const subClient = redisClient.duplicate({ keyPrefix: "" });
+
 pubClient.on("error", (error: Error) => {
   logger.error(`[REDIS PUB] Connection error: ${error.message}`);
 });
 subClient.on("error", (error: Error) => {
   logger.error(`[REDIS SUB] Connection error: ${error.message}`);
 });
-io.adapter(createAdapter(pubClient, subClient, { key: `${env.APP_NAME ?? "app"}:socket.io` }));
+
+io.adapter(createAdapter(pubClient, subClient, { key: `${env.APP_NAME}:socket.io` }));
 
 setSocketServer(io);
-registerSocketServer(io);
 
-const app = createApp(io);
+registerSocketServer(io, [
+  (socketIo, socket) => registerMessageHandlers(socketIo, socket as never),
+  (socketIo, socket) => registerNotificationHandlers(socketIo, socket as never),
+]);
+
+const app = createApp();
+app.set("io", io);
 httpServer.on("request", app);
+
+const storyCron = initStoryCleanupCron();
+const tokenCron = initTokenCleanupCron();
+logger.info("[CRON] Background jobs initialized (story cleanup & token cleanup).");
 
 const gracefulShutdown = (signal: string): void => {
   logger.info(`[SERVER] ${signal} received - shutting down gracefully`);
+
+  storyCron.stop();
+  tokenCron.stop();
 
   io.close(async () => {
     logger.info("[SERVER] Socket and HTTP server closed. Closing Redis connections...");
@@ -75,11 +93,11 @@ process.on("uncaughtException", (error: Error) => {
 const bootstrap = async (): Promise<void> => {
   try {
     await connectCloudinary();
-    logger.info("[SERVER] Cloudinary connected.");
 
     httpServer.listen(env.PORT, () => {
       logger.info(`[SERVER] Running in ${env.NODE_ENV} mode`);
       logger.info(`[SERVER] Listening on http://localhost:${env.PORT}`);
+      logger.info(`[SERVER] API Docs: http://localhost:${env.PORT}/docs`);
       logger.info(`[SERVER] Health check: http://localhost:${env.PORT}/health`);
     });
   } catch (error) {

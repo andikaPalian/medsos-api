@@ -1,26 +1,22 @@
-import express, { Request, Response } from "express";
-import { Server as SocketServer } from "socket.io";
+import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { env } from "./config/env.js";
-import { globalErrorHandler } from "./middlewares/error.middleware.js";
-import { logger } from "./common/utils/logger.js";
-import { messageRouter } from "./modules/message/routes/message.routes.js";
-import { globalLimiter } from "./middlewares/rateLimiter.js";
-import { userAuthRouter } from "./modules/auth/routes/userAuth.routes.js";
-import { userRouter } from "./modules/user/routes/user.routes.js";
-import { followRouter } from "./modules/follow/routes/follow.routes.js";
-import { postRouter } from "./modules/post/routes/post.routes.js";
-import { likeRouter } from "./modules/like/routes/like.routes.js";
-import { commentRouter } from "./modules/comment/routes/comment.routes.js";
-import { reportRouter } from "./modules/report/routes/report.routes.js";
-import { notificationRouter } from "./modules/notification/routes/notification.routes.js";
-import { storyRouter } from "./modules/story/routes/story.routes.js";
+import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+import { env } from "@core/config/env.config.js";
+import { globalErrorHandler } from "@infra/http/middlewares/error.middleware.js";
+import { globalLimiter } from "@infra/http/middlewares/rate-limit.middleware.js";
+import { xssProtection } from "@infra/http/middlewares/xss.middleware.js";
+import { csrfProtection } from "@infra/http/middlewares/csrf.middleware.js";
+import { logger } from "@core/utils/logger.js";
+import { registerRoutes } from "@infra/http/router.js";
+import { swaggerSpec } from "@core/config/swagger.config.js";
+import passport from "@core/config/passport.config.js";
+import { prisma } from "@core/config/database.config.js";
+import { redisClient } from "@core/config/redis.config.js";
 
-const API_PREFIX = "api/v1" as const;
-
-export const createApp = (io: SocketServer) => {
+export const createApp = (): Express => {
   const app = express();
 
   app.set("trust proxy", env.NODE_ENV === "production" ? 1 : "loopback");
@@ -37,12 +33,16 @@ export const createApp = (io: SocketServer) => {
       origin: env.CLIENT_URL,
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-CSRF-Token"],
     }),
   );
 
+  app.use(cookieParser());
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(xssProtection);
+  app.use(csrfProtection);
+  app.use(passport.initialize());
 
   if (env.NODE_ENV !== "production") {
     app.use(morgan("dev"));
@@ -56,26 +56,47 @@ export const createApp = (io: SocketServer) => {
     );
   }
 
-  app.get("/health", (_req: Request, res: Response) => {
-    res.status(200).json({
-      status: "ok",
+  // Swagger Documentation Dashboard
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get("/docs.json", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+  });
+
+  // Health Check Endpoint
+  app.get("/health", async (_req: Request, res: Response) => {
+    let dbStatus = "ok";
+    let redisStatus = "ok";
+
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch {
+      dbStatus = "error";
+    }
+
+    try {
+      await redisClient.ping();
+    } catch {
+      redisStatus = "error";
+    }
+
+    const isHealthy = dbStatus === "ok" && redisStatus === "ok";
+
+    res.status(isHealthy ? 200 : 503).json({
+      status: isHealthy ? "ok" : "degraded",
       environment: env.NODE_ENV,
       timestamp: new Date().toISOString(),
+      services: {
+        database: dbStatus,
+        redis: redisStatus,
+      },
     });
   });
 
   app.use(globalLimiter);
 
-  app.use(`${API_PREFIX}/auth`, userAuthRouter);
-  app.use(`${API_PREFIX}/user`, userRouter);
-  app.use(`${API_PREFIX}/message`, messageRouter);
-  app.use(`${API_PREFIX}/follow`, followRouter);
-  app.use(`${API_PREFIX}/post`, postRouter);
-  app.use(`${API_PREFIX}/like`, likeRouter);
-  app.use(`${API_PREFIX}/comment`, commentRouter);
-  app.use(`${API_PREFIX}/report`, reportRouter);
-  app.use(`${API_PREFIX}/notification`, notificationRouter);
-  app.use(`${API_PREFIX}/story`, storyRouter);
+  // Register domain modules
+  registerRoutes(app);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({
