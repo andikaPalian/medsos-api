@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,9 +20,9 @@ model User {
   profilePublicId          String?
   isPrivate                Boolean   @default(false)
   isVerified               Boolean   @default(false)
-  verificationToken        String?   @unique // Untuk email verification
+  verificationToken        String?   @unique
   verificationTokenExpiry  DateTime?
-  resetPasswordToken       String?   @unique // Untuk reset password
+  resetPasswordToken       String?   @unique
   resetPasswordTokenExpiry DateTime?
   followersCount           Int       @default(0)
   followingCount           Int       @default(0)
@@ -91,7 +88,7 @@ model CloseFriends {
   friendId  String
   createdAt DateTime @default(now())
 
-  @@unique([userId, friendId]) // so as not to duplicate
+  @@unique([userId, friendId])
   @@index([userId])
   @@index([friendId])
 }
@@ -125,6 +122,9 @@ model Media {
   post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   storyId     String?
   story       Story?    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([storyId])
 }
 
 enum MediaType {
@@ -135,7 +135,7 @@ enum MediaType {
 model Story {
   id             String        @id @default(uuid())
   userId         String
-  user           User          @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   media          Media[]
   viewers        StoryViewer[]
   isCloseFriends Boolean       @default(false)
@@ -144,6 +144,7 @@ model Story {
 
   notification Notification[]
 
+  @@index([userId])
   @@index([expiresAt])
 }
 
@@ -190,7 +191,7 @@ model Follow {
   id          String       @id @default(uuid())
   followerId  String
   followingId String
-  status      FollowStatus @default(PENDING) // untuk private account
+  status      FollowStatus @default(PENDING)
   createdAt   DateTime     @default(now())
 
   follower  User @relation("followers", fields: [followerId], references: [id], onDelete: Cascade)
@@ -209,10 +210,8 @@ enum FollowStatus {
 
 model Notification {
   id        String           @id @default(uuid())
-  // User who receiver notification
   userId    String
   user      User             @relation("UserNotification", fields: [userId], references: [id], onDelete: Cascade)
-  // User who trigger notifications (e.g. message senders, likers, comments)
   senderId  String?
   sender    User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
   type      NotificationType
@@ -276,9 +275,9 @@ model Message {
   senderId             String
   receiverId           String
   roomId               String
-  sender               User                @relation("messagesSent", fields: [senderId], references: [id])
-  receiver             User                @relation("messagesReceived", fields: [receiverId], references: [id])
-  room                 Room                @relation(fields: [roomId], references: [id])
+  sender               User                @relation("messagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver             User                @relation("messagesReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  room                 Room                @relation(fields: [roomId], references: [id], onDelete: Cascade)
   isRead               Boolean             @default(false)
   isEdited             Boolean             @default(false)
   isDeletedForEveryone Boolean             @default(false)
@@ -363,9 +362,13 @@ model Report {
   reason     String
   createdAt  DateTime @default(now())
 
-  reporter     User  @relation("reports", fields: [reporterId], references: [id])
+  reporter     User  @relation("reports", fields: [reporterId], references: [id], onDelete: Cascade)
   post         Post? @relation("postReports", fields: [postId], references: [id], onDelete: Cascade)
   reportedUser User? @relation("reportedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([postId])
+  @@index([userId])
 }
 
 model Block {
@@ -378,4 +381,6 @@ model Block {
   blocked User @relation("blockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }
